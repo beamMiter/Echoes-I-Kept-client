@@ -156,8 +156,9 @@ function ProfilePage() {
             <input
               type="email"
               value={form.email}
-              disabled
-              className="h-12 w-full rounded-sm border border-transparent bg-[#F5F4F2] px-3 text-sm text-muted-foreground"
+              onChange={(e) => updateField('email', e.target.value)}
+              disabled={state.loading}
+              className="h-12 w-full rounded-sm border border-input bg-background px-3 text-sm focus-visible:border-muted-foreground focus-visible:outline-none"
             />
             {errors.email && (
               <span className="text-xs text-red-500">{errors.email}</span>
