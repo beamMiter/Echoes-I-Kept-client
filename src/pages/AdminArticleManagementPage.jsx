@@ -182,7 +182,7 @@ function AdminArticleManagementPage() {
 
     return (
       <AdminLayout
-        title="Create article"
+        title={isEditing ? 'Edit article' : 'Create article'}
         actions={
           <>
             <button
