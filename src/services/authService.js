@@ -1,19 +1,12 @@
+import { apiClient } from './apiClient'
+import { clearTokens, getAccessToken, getRefreshToken, setTokens } from './tokenStorage'
 import { avatarUrl, mockUsers } from '../data/mockUsers'
 import { getPasswordStrengthError } from '../utils/passwordValidation'
 
-const TOKEN_KEY = 'token'
-const USER_KEY = 'mockUser'
+const USER_CACHE_KEY = 'authUser'
 const REGISTERED_USERS_KEY = 'registeredUsers'
 const USER_OVERRIDES_KEY = 'mockUserOverrides'
 const DELETED_MOCK_USERS_KEY = 'deletedMockUsers'
-
-const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
-
-function toPublicUser(user) {
-  const publicUser = { ...user }
-  delete publicUser.password
-  return publicUser
-}
 
 function parseStoredJson(key, fallback) {
   try {
@@ -22,6 +15,148 @@ function parseStoredJson(key, fallback) {
     localStorage.removeItem(key)
     return fallback
   }
+}
+
+function createError(message, status) {
+  const error = new Error(message)
+  error.response = { status, data: { error: message } }
+  return error
+}
+
+// Normalizes the real API's `{ error: { code, message } }` shape into the
+// flat `{ error: <string> }` shape the rest of the app expects (matching
+// what the mock service used to throw).
+function normalizeApiError(error) {
+  if (!error.response) return error
+  const message = error.response.data?.error?.message || 'Something went wrong'
+  return createError(message, error.response.status)
+}
+
+// ---- real auth (backed by the Echoes-I-Kept-server API) ----
+
+function splitName(name) {
+  const [firstName, ...rest] = name.trim().split(/\s+/)
+  return { firstName, lastName: rest.join(' ') || null }
+}
+
+function toDisplayUser(apiUser) {
+  return {
+    ...apiUser,
+    name: [apiUser.firstName, apiUser.lastName].filter(Boolean).join(' ') || apiUser.username,
+  }
+}
+
+function cacheUser(user) {
+  localStorage.setItem(USER_CACHE_KEY, JSON.stringify(user))
+}
+
+function persistSession({ accessToken, refreshToken, user }) {
+  setTokens({ accessToken, refreshToken })
+  cacheUser(user)
+}
+
+export async function signup({ name, username, email, password }, { persist = true } = {}) {
+  try {
+    const { firstName, lastName } = splitName(name)
+    const { data } = await apiClient.post('/api/auth/signup', {
+      firstName,
+      lastName,
+      username,
+      email,
+      password,
+    })
+
+    const user = toDisplayUser(data.data)
+    if (persist) {
+      persistSession({ accessToken: data.accessToken, refreshToken: data.refreshToken, user })
+    }
+
+    return { user }
+  } catch (error) {
+    throw normalizeApiError(error)
+  }
+}
+
+export async function login({ email, password, role }) {
+  try {
+    const { data } = await apiClient.post('/api/auth/login', { email, password, role })
+    const user = toDisplayUser(data.data)
+    persistSession({ accessToken: data.accessToken, refreshToken: data.refreshToken, user })
+
+    return { user }
+  } catch (error) {
+    throw normalizeApiError(error)
+  }
+}
+
+export async function updateProfile({ name, username, email, profilePic }) {
+  try {
+    const { firstName, lastName } = splitName(name)
+    const { data } = await apiClient.put('/api/auth/me', {
+      firstName,
+      lastName,
+      username,
+      email,
+      profilePic: profilePic || null,
+    })
+
+    const user = toDisplayUser(data.data)
+    cacheUser(user)
+
+    return user
+  } catch (error) {
+    throw normalizeApiError(error)
+  }
+}
+
+export async function resetPassword({ currentPassword, newPassword }) {
+  try {
+    const { data } = await apiClient.put('/api/auth/me/password', {
+      currentPassword,
+      newPassword,
+    })
+
+    // Resetting the password bumps token_version server-side, revoking the
+    // session this request started with — store the fresh pair it returns.
+    const user = toDisplayUser(data.data)
+    persistSession({ accessToken: data.accessToken, refreshToken: data.refreshToken, user })
+  } catch (error) {
+    throw normalizeApiError(error)
+  }
+}
+
+export async function logout() {
+  const refreshToken = getRefreshToken()
+
+  try {
+    if (refreshToken) {
+      await apiClient.post('/api/auth/logout', { refreshToken })
+    }
+  } catch {
+    // best-effort revoke — clear local state regardless of server response
+  } finally {
+    clearTokens()
+    localStorage.removeItem(USER_CACHE_KEY)
+  }
+}
+
+export function getStoredUser() {
+  if (!getAccessToken()) return null
+  return parseStoredJson(USER_CACHE_KEY, null)
+}
+
+// ---- admin member management (still mock — not part of this branch) ----
+//
+// This section is unchanged demo data, disconnected from the real `users`
+// table. `requireAdmin` below only checks the real logged-in user's role;
+// wiring these to the real `/api/users` endpoints is a separate follow-up.
+
+function normalizeEmail(email) {
+  return email.trim().toLowerCase()
+}
+
+function normalizeUsername(username) {
+  return username.trim()
 }
 
 function getRegisteredUsers() {
@@ -48,20 +183,6 @@ function saveDeletedMockUserIds(userIds) {
   localStorage.setItem(DELETED_MOCK_USERS_KEY, JSON.stringify(userIds))
 }
 
-function createError(message, status) {
-  const error = new Error(message)
-  error.response = { status, data: { error: message } }
-  return error
-}
-
-function normalizeEmail(email) {
-  return email.trim().toLowerCase()
-}
-
-function normalizeUsername(username) {
-  return username.trim()
-}
-
 function applyUserOverride(user) {
   const override = getUserOverrides()[user.id]
   return override ? { ...user, ...override } : user
@@ -70,114 +191,19 @@ function applyUserOverride(user) {
 function getAllUsers() {
   const deletedIds = getDeletedMockUserIds()
   return [
-    ...mockUsers
-      .filter((user) => !deletedIds.includes(user.id))
-      .map(applyUserOverride),
+    ...mockUsers.filter((user) => !deletedIds.includes(user.id)).map(applyUserOverride),
     ...getRegisteredUsers(),
   ]
 }
 
-function persistSession(user) {
-  const token = `mock-token-${user.id}`
-  const publicUser = toPublicUser(user)
-  localStorage.setItem(TOKEN_KEY, token)
-  localStorage.setItem(USER_KEY, JSON.stringify(publicUser))
-  return { access_token: token, user: publicUser }
-}
-
-function getCurrentPublicUser() {
-  return parseStoredJson(USER_KEY, null)
-}
-
-function persistUserUpdate(updatedUser) {
-  const registeredUsers = getRegisteredUsers()
-  const registeredIndex = registeredUsers.findIndex(
-    (user) => user.id === updatedUser.id,
-  )
-
-  if (registeredIndex >= 0) {
-    registeredUsers[registeredIndex] = updatedUser
-    saveRegisteredUsers(registeredUsers)
-  } else {
-    const overrides = getUserOverrides()
-    overrides[updatedUser.id] = {
-      ...(overrides[updatedUser.id] || {}),
-      name: updatedUser.name,
-      username: updatedUser.username,
-      email: updatedUser.email,
-      password: updatedUser.password,
-      profilePic: updatedUser.profilePic,
-    }
-    saveUserOverrides(overrides)
-  }
-
-  const currentUser = getCurrentPublicUser()
-
-  if (currentUser?.id === updatedUser.id) {
-    return persistSession(updatedUser).user
-  }
-
-  return toPublicUser(updatedUser)
-}
-
-function getCurrentFullUser() {
-  const currentUser = getCurrentPublicUser()
-
-  if (!currentUser) {
-    throw createError('Unauthorized', 401)
-  }
-
-  const fullUser = getAllUsers().find((user) => user.id === currentUser.id)
-
-  if (!fullUser) {
-    throw createError('Unauthorized', 401)
-  }
-
-  return fullUser
-}
-
-function validateUniqueUserFields({ email, username, excludedUserId }) {
-  const users = getAllUsers()
-  const normalizedEmail = normalizeEmail(email)
-  const normalizedUsername = normalizeUsername(username)
-
-  if (
-    users.some(
-      (user) =>
-        user.id !== excludedUserId &&
-        normalizeEmail(user.email) === normalizedEmail,
-    )
-  ) {
-    throw createError('Email is already registered')
-  }
-
-  if (
-    users.some(
-      (user) =>
-        user.id !== excludedUserId &&
-        normalizeUsername(user.username).toLowerCase() ===
-          normalizedUsername.toLowerCase(),
-    )
-  ) {
-    throw createError('Username is already taken')
-  }
-}
-
-function requireAdmin() {
-  const currentUser = getCurrentFullUser()
-
-  if (currentUser.role !== 'admin') {
-    throw createError('Forbidden', 403)
-  }
-
-  return currentUser
+function toPublicUser(user) {
+  const publicUser = { ...user }
+  delete publicUser.password
+  return publicUser
 }
 
 function getNextUserId() {
-  const maxId = getAllUsers().reduce(
-    (max, user) => Math.max(max, Number(user.id)),
-    0,
-  )
+  const maxId = getAllUsers().reduce((max, user) => Math.max(max, Number(user.id)), 0)
   return maxId + 1
 }
 
@@ -205,117 +231,41 @@ function deleteStoredUser(userId) {
   saveUserOverrides(overrides)
 }
 
-export async function login({ email, password, role }) {
-  await delay(500)
+function validateUniqueUserFields({ email, username, excludedUserId }) {
+  const users = getAllUsers()
+  const normalizedEmail = normalizeEmail(email)
+  const normalizedUsername = normalizeUsername(username)
 
-  const user = getAllUsers().find(
-    (u) =>
-      u.email === email &&
-      u.password === password &&
-      (!role || u.role === role),
-  )
-
-  if (!user) {
-    const error = new Error('Invalid email or password')
-    error.response = { data: { error: 'Invalid email or password' } }
-    throw error
+  if (
+    users.some(
+      (user) => user.id !== excludedUserId && normalizeEmail(user.email) === normalizedEmail,
+    )
+  ) {
+    throw createError('Email is already registered')
   }
 
-  return persistSession(user)
+  if (
+    users.some(
+      (user) =>
+        user.id !== excludedUserId &&
+        normalizeUsername(user.username).toLowerCase() === normalizedUsername.toLowerCase(),
+    )
+  ) {
+    throw createError('Username is already taken')
+  }
 }
 
-export async function signup(
-  { name, username, email, password },
-  { persist = true } = {},
-) {
-  await delay(500)
+function requireAdmin() {
+  const currentUser = getStoredUser()
 
-  const passwordError = getPasswordStrengthError(password)
-  if (passwordError) {
-    throw createError(passwordError)
+  if (!currentUser) {
+    throw createError('Unauthorized', 401)
+  }
+  if (currentUser.role !== 'admin') {
+    throw createError('Forbidden', 403)
   }
 
-  validateUniqueUserFields({ email, username })
-
-  const newUser = {
-    id: getNextUserId(),
-    name: name.trim(),
-    username: normalizeUsername(username),
-    email: normalizeEmail(email),
-    password,
-    role: 'user',
-    profilePic: avatarUrl(name, '2B6CB0'),
-  }
-
-  const registered = getRegisteredUsers()
-  registered.push(newUser)
-  saveRegisteredUsers(registered)
-
-  return persist ? persistSession(newUser) : { user: newUser }
-}
-
-export async function updateProfile({ name, username, email, profilePic }) {
-  await delay(400)
-
-  const currentUser = getCurrentFullUser()
-  validateUniqueUserFields({ email, username, excludedUserId: currentUser.id })
-
-  return persistUserUpdate({
-    ...currentUser,
-    name: name.trim(),
-    username: normalizeUsername(username),
-    email: normalizeEmail(email),
-    profilePic: profilePic || avatarUrl(name.trim(), '2B6CB0'),
-  })
-}
-
-export async function resetPassword({ currentPassword, newPassword }) {
-  await delay(400)
-
-  const currentUser = getCurrentFullUser()
-
-  const passwordError = getPasswordStrengthError(newPassword)
-  if (passwordError) {
-    throw createError(passwordError)
-  }
-
-  if (currentUser.password !== currentPassword) {
-    throw createError('Current password is incorrect')
-  }
-
-  return persistUserUpdate({
-    ...currentUser,
-    password: newPassword,
-  })
-}
-
-export async function getUser() {
-  await delay(300)
-
-  const token = localStorage.getItem(TOKEN_KEY)
-  const stored = localStorage.getItem(USER_KEY)
-
-  if (!token || !stored) {
-    const error = new Error('Unauthorized')
-    error.response = { status: 401, data: { error: 'Unauthorized or token expired' } }
-    throw error
-  }
-
-  return JSON.parse(stored)
-}
-
-export function logout() {
-  localStorage.removeItem(TOKEN_KEY)
-  localStorage.removeItem(USER_KEY)
-}
-
-export function getStoredToken() {
-  return localStorage.getItem(TOKEN_KEY)
-}
-
-export function getStoredUser() {
-  if (!getStoredToken()) return null
-  return getCurrentPublicUser()
+  return currentUser
 }
 
 export function getAdminMembers() {
@@ -350,10 +300,7 @@ export function createAdminMember({ name, username, email, password, role, profi
   return toPublicUser(newUser)
 }
 
-export function updateAdminMember(
-  userId,
-  { name, username, email, password, role, profilePic },
-) {
+export function updateAdminMember(userId, { name, username, email, password, role, profilePic }) {
   requireAdmin()
 
   const numericUserId = Number(userId)
@@ -369,21 +316,13 @@ export function updateAdminMember(
     throw createError(passwordError)
   }
 
-  if (
-    targetUser.role === 'admin' &&
-    role !== 'admin' &&
-    countAdmins(currentUsers) <= 1
-  ) {
+  if (targetUser.role === 'admin' && role !== 'admin' && countAdmins(currentUsers) <= 1) {
     throw createError('At least one admin account is required')
   }
 
-  validateUniqueUserFields({
-    email,
-    username,
-    excludedUserId: numericUserId,
-  })
+  validateUniqueUserFields({ email, username, excludedUserId: numericUserId })
 
-  return persistUserUpdate({
+  const updatedUser = {
     ...targetUser,
     name: name.trim(),
     username: normalizeUsername(username),
@@ -391,21 +330,38 @@ export function updateAdminMember(
     password: password || targetUser.password,
     role,
     profilePic: profilePic.trim() || avatarUrl(name.trim(), '2B6CB0'),
-  })
+  }
+
+  const registeredUsers = getRegisteredUsers()
+  const registeredIndex = registeredUsers.findIndex((user) => user.id === updatedUser.id)
+
+  if (registeredIndex >= 0) {
+    registeredUsers[registeredIndex] = updatedUser
+    saveRegisteredUsers(registeredUsers)
+  } else {
+    const overrides = getUserOverrides()
+    overrides[updatedUser.id] = {
+      ...(overrides[updatedUser.id] || {}),
+      name: updatedUser.name,
+      username: updatedUser.username,
+      email: updatedUser.email,
+      password: updatedUser.password,
+      profilePic: updatedUser.profilePic,
+    }
+    saveUserOverrides(overrides)
+  }
+
+  return toPublicUser(updatedUser)
 }
 
 export function deleteAdminMember(userId) {
-  const currentUser = requireAdmin()
+  requireAdmin()
   const numericUserId = Number(userId)
   const currentUsers = getAllUsers()
   const targetUser = currentUsers.find((user) => user.id === numericUserId)
 
   if (!targetUser) {
     throw createError('Member not found', 404)
-  }
-
-  if (currentUser.id === numericUserId) {
-    throw createError('You cannot delete your own account')
   }
 
   if (targetUser.role === 'admin' && countAdmins(currentUsers) <= 1) {

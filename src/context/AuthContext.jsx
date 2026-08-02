@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import AuthContext from './AuthContextCore'
 import * as authService from '../services/authService'
+import { onUnauthorized } from '../services/apiClient'
 
 export function AuthProvider({ children }) {
   const navigate = useNavigate()
@@ -12,6 +13,12 @@ export function AuthProvider({ children }) {
     error: null,
     getUserLoading: false,
   })
+
+  useEffect(() => {
+    onUnauthorized(() => {
+      setState({ user: null, loading: false, error: null, getUserLoading: false })
+    })
+  }, [])
 
   const login = async (credentials) => {
     try {
@@ -77,8 +84,8 @@ export function AuthProvider({ children }) {
     }
   }
 
-  const logout = () => {
-    authService.logout()
+  const logout = async () => {
+    await authService.logout()
     setState({ user: null, loading: false, error: null, getUserLoading: false })
     toast.success('Logged out', {
       description: 'You have signed out of your listening journal.',
