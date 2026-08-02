@@ -44,6 +44,35 @@ export async function updateAdminArticle(article, form, status) {
   }
 }
 
+export async function getPendingArticles() {
+  try {
+    const { data } = await apiClient.get('/api/posts', {
+      params: { status: 'pending', limit: 50 },
+    })
+    return data.data
+  } catch (error) {
+    throw normalizeApiError(error)
+  }
+}
+
+export async function approveArticle(id) {
+  try {
+    const { data } = await apiClient.put(`/api/posts/${id}/approve`)
+    return data.data
+  } catch (error) {
+    throw normalizeApiError(error)
+  }
+}
+
+export async function rejectArticle(id, reason) {
+  try {
+    const { data } = await apiClient.put(`/api/posts/${id}/reject`, { reason })
+    return data.data
+  } catch (error) {
+    throw normalizeApiError(error)
+  }
+}
+
 export async function deleteAdminArticle(id) {
   try {
     await apiClient.delete(`/api/posts/${id}`)
