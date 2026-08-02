@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Pencil, Plus, Search, Trash2, X } from 'lucide-react'
+import { toast } from 'sonner'
 import AdminLayout from '../components/AdminLayout'
 import {
   createAdminCategory,
@@ -31,7 +32,6 @@ function AdminCategoryManagementPage() {
   const [editingId, setEditingId] = useState(null)
   const [search, setSearch] = useState('')
   const [errors, setErrors] = useState({})
-  const [toast, setToast] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
 
   const editingCategory = useMemo(
@@ -95,7 +95,7 @@ function AdminCategoryManagementPage() {
   }
 
   const showToast = (title, message) => {
-    setToast({ title, message })
+    toast.success(title, { description: message })
   }
 
   const submitCategory = () => {
@@ -303,14 +303,6 @@ function AdminCategoryManagementPage() {
         </p>
       )}
 
-      {toast && (
-        <Toast
-          message={toast.message}
-          onClose={() => setToast(null)}
-          title={toast.title}
-        />
-      )}
-
       {deleteTarget && (
         <DeleteCategoryDialog
           category={deleteTarget}
@@ -319,25 +311,6 @@ function AdminCategoryManagementPage() {
         />
       )}
     </AdminLayout>
-  )
-}
-
-function Toast({ message, onClose, title }) {
-  return (
-    <div className="fixed bottom-10 right-10 z-50 flex w-[520px] max-w-[calc(100vw-40px)] items-start justify-between rounded-sm bg-green-500 px-5 py-4 text-white shadow-lg">
-      <div>
-        <p className="text-base font-bold">{title}</p>
-        <p className="mt-1 text-xs">{message}</p>
-      </div>
-      <button
-        type="button"
-        onClick={onClose}
-        className="rounded-full p-1 hover:bg-white/10"
-        aria-label="Close notification"
-      >
-        <X className="h-4 w-4" />
-      </button>
-    </div>
   )
 }
 

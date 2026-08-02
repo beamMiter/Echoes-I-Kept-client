@@ -8,6 +8,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react'
+import { toast } from 'sonner'
 import AdminLayout from '../components/AdminLayout'
 import {
   createAdminArticle,
@@ -61,7 +62,6 @@ function AdminArticleManagementPage() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [search, setSearch] = useState('')
-  const [toast, setToast] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
 
   const editingArticle = useMemo(
@@ -130,7 +130,7 @@ function AdminArticleManagementPage() {
   }
 
   const showToast = (title, message) => {
-    setToast({ title, message })
+    toast.success(title, { description: message })
   }
 
   const submitArticle = (status) => {
@@ -463,14 +463,6 @@ function AdminArticleManagementPage() {
         </p>
       )}
 
-      {toast && (
-        <Toast
-          message={toast.message}
-          onClose={() => setToast(null)}
-          title={toast.title}
-        />
-      )}
-
       {deleteTarget && (
         <DeleteArticleDialog
           onCancel={() => setDeleteTarget(null)}
@@ -494,25 +486,6 @@ function StatusLabel({ status }) {
       />
       {statusMeta.label}
     </span>
-  )
-}
-
-function Toast({ message, onClose, title }) {
-  return (
-    <div className="fixed bottom-10 right-10 z-50 flex w-[520px] max-w-[calc(100vw-40px)] items-start justify-between rounded-sm bg-green-500 px-5 py-4 text-white shadow-lg">
-      <div>
-        <p className="text-base font-bold">{title}</p>
-        <p className="mt-1 text-xs">{message}</p>
-      </div>
-      <button
-        type="button"
-        onClick={onClose}
-        className="rounded-full p-1 hover:bg-white/10"
-        aria-label="Close notification"
-      >
-        <X className="h-4 w-4" />
-      </button>
-    </div>
   )
 }
 
