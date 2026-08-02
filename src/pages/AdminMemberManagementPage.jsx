@@ -8,6 +8,7 @@ import {
   UserRound,
   X,
 } from 'lucide-react'
+import { toast } from 'sonner'
 import AdminLayout from '../components/AdminLayout'
 import {
   createAdminMember,
@@ -61,7 +62,6 @@ function AdminMemberManagementPage() {
   const [apiError, setApiError] = useState('')
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState('all')
-  const [toast, setToast] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
 
   useEffect(() => {
@@ -181,15 +181,13 @@ function AdminMemberManagementPage() {
     try {
       if (editingMember) {
         await updateAdminMember(editingMember.id, form)
-        setToast({
-          title: 'Member updated',
-          message: 'Member profile has been successfully saved',
+        toast.success('Member updated', {
+          description: 'Member profile has been successfully saved',
         })
       } else {
         await createAdminMember(form)
-        setToast({
-          title: 'Member created',
-          message: 'New member has been successfully created',
+        toast.success('Member created', {
+          description: 'New member has been successfully created',
         })
       }
 
@@ -211,9 +209,8 @@ function AdminMemberManagementPage() {
       await refreshMembers()
       if (editingId === deleteTarget.id) closeForm()
       setDeleteTarget(null)
-      setToast({
-        title: 'Member deleted',
-        message: 'Member account has been deleted',
+      toast.success('Member deleted', {
+        description: 'Member account has been deleted',
       })
     } catch (error) {
       setApiError(getErrorMessage(error, 'Unable to delete member.'))
@@ -554,14 +551,6 @@ function AdminMemberManagementPage() {
         </p>
       )}
 
-      {toast && (
-        <Toast
-          message={toast.message}
-          onClose={() => setToast(null)}
-          title={toast.title}
-        />
-      )}
-
       {deleteTarget && (
         <DeleteMemberDialog
           member={deleteTarget}
@@ -579,25 +568,6 @@ function SummaryStat({ label, value }) {
     <div className="rounded-sm bg-[#EFEEEB] px-5 py-4">
       <p className="text-2xl font-bold">{value}</p>
       <p className="mt-1 text-sm text-muted-foreground">{label}</p>
-    </div>
-  )
-}
-
-function Toast({ message, onClose, title }) {
-  return (
-    <div className="fixed bottom-10 right-10 z-50 flex w-[520px] max-w-[calc(100vw-40px)] items-start justify-between rounded-sm bg-green-500 px-5 py-4 text-white shadow-lg">
-      <div>
-        <p className="text-base font-bold">{title}</p>
-        <p className="mt-1 text-xs">{message}</p>
-      </div>
-      <button
-        type="button"
-        onClick={onClose}
-        className="rounded-full p-1 hover:bg-white/10"
-        aria-label="Close notification"
-      >
-        <X className="h-4 w-4" />
-      </button>
     </div>
   )
 }
