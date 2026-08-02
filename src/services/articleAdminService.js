@@ -56,9 +56,11 @@ export async function uploadArticleImage(file) {
   try {
     const formData = new FormData()
     formData.append('image', file)
-    const { data } = await apiClient.post('/api/uploads', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    })
+    // Don't set Content-Type manually — the browser needs to generate it
+    // itself (with the multipart boundary) when given a FormData body.
+    // Setting it explicitly here would strip the boundary and multer
+    // would fail to parse the request.
+    const { data } = await apiClient.post('/api/uploads', formData)
     return data.data.url
   } catch (error) {
     throw normalizeApiError(error)
