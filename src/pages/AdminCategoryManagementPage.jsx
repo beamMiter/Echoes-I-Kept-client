@@ -1,14 +1,14 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Pencil, Plus, Search, Trash2, X } from 'lucide-react'
 import { toast } from 'sonner'
 import AdminLayout from '../components/AdminLayout'
 import {
   createAdminCategory,
+  deleteAdminCategory,
   getAdminCategories,
-  saveAdminCategories,
   updateAdminCategory,
 } from '../services/categoryAdminService'
-import { getAdminArticles, saveAdminArticles } from '../services/articleAdminService'
+import { getAdminArticles } from '../services/articleAdminService'
 
 const emptyForm = {
   name: '',
@@ -25,14 +25,39 @@ function formatUpdatedAt(value) {
 }
 
 function AdminCategoryManagementPage() {
-  const [categories, setCategories] = useState(() => getAdminCategories())
-  const [articles, setArticles] = useState(() => getAdminArticles())
+  const [categories, setCategories] = useState([])
+  const [articles, setArticles] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
   const [view, setView] = useState('list')
   const [form, setForm] = useState(emptyForm)
   const [editingId, setEditingId] = useState(null)
   const [search, setSearch] = useState('')
   const [errors, setErrors] = useState({})
   const [deleteTarget, setDeleteTarget] = useState(null)
+
+  useEffect(() => {
+    let cancelled = false
+
+    Promise.all([getAdminCategories(), getAdminArticles()])
+      .then(([categoriesData, articlesData]) => {
+        if (cancelled) return
+        setCategories(categoriesData)
+        setArticles(articlesData)
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          setErrors({ api: error.response?.data?.error || 'Unable to load categories.' })
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const editingCategory = useMemo(
     () => categories.find((category) => category.id === editingId),
@@ -63,14 +88,13 @@ function AdminCategoryManagementPage() {
     setErrors((prev) => ({ ...prev, [field]: '' }))
   }
 
-  const persistCategories = (nextCategories) => {
-    setCategories(nextCategories)
-    saveAdminCategories(nextCategories)
-  }
-
-  const persistArticles = (nextArticles) => {
-    setArticles(nextArticles)
-    saveAdminArticles(nextArticles)
+  const refreshData = async () => {
+    const [categoriesData, articlesData] = await Promise.all([
+      getAdminCategories(),
+      getAdminArticles(),
+    ])
+    setCategories(categoriesData)
+    setArticles(articlesData)
   }
 
   const openCreate = () => {
@@ -98,38 +122,27 @@ function AdminCategoryManagementPage() {
     toast.success(title, { description: message })
   }
 
-  const submitCategory = () => {
+  const submitCategory = async () => {
+    setSubmitting(true)
     try {
       if (editingCategory) {
-        const updatedCategory = updateAdminCategory(
-          editingCategory,
-          form,
-          categories,
-        )
-        const nextCategories = categories.map((category) =>
-          category.id === editingCategory.id ? updatedCategory : category,
-        )
-        const nextArticles = articles.map((article) =>
-          article.category === editingCategory.name
-            ? { ...article, category: updatedCategory.name }
-            : article,
-        )
-
-        persistCategories(nextCategories)
-        persistArticles(nextArticles)
+        await updateAdminCategory(editingCategory, form)
         showToast('Category updated', 'Category has been successfully saved')
       } else {
-        persistCategories([createAdminCategory(form), ...categories])
+        await createAdminCategory(form)
         showToast('Category created', 'New category has been successfully created')
       }
 
+      await refreshData()
       closeForm()
     } catch (error) {
-      setErrors({ api: error.message || 'Unable to save category.' })
+      setErrors({ api: error.response?.data?.error || 'Unable to save category.' })
+    } finally {
+      setSubmitting(false)
     }
   }
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (!deleteTarget) return
 
     if (usageByCategory[deleteTarget.name]) {
@@ -140,11 +153,19 @@ function AdminCategoryManagementPage() {
       return
     }
 
-    persistCategories(
-      categories.filter((category) => category.id !== deleteTarget.id),
-    )
-    setDeleteTarget(null)
-    showToast('Category deleted', 'Category has been deleted')
+    setSubmitting(true)
+    try {
+      await deleteAdminCategory(deleteTarget.id)
+      await refreshData()
+      if (editingId === deleteTarget.id) closeForm()
+      setDeleteTarget(null)
+      showToast('Category deleted', 'Category has been deleted')
+    } catch (error) {
+      setErrors({ api: error.response?.data?.error || 'Unable to delete category.' })
+      setDeleteTarget(null)
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   if (view === 'form') {
@@ -163,9 +184,10 @@ function AdminCategoryManagementPage() {
             <button
               type="button"
               onClick={submitCategory}
-              className="rounded-full bg-foreground px-8 py-2 text-sm font-medium text-white hover:bg-muted-foreground"
+              disabled={submitting}
+              className="rounded-full bg-foreground px-8 py-2 text-sm font-medium text-white hover:bg-muted-foreground disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Save
+              {submitting ? 'Saving...' : 'Save'}
             </button>
           </>
         }
@@ -207,6 +229,7 @@ function AdminCategoryManagementPage() {
             category={deleteTarget}
             onCancel={() => setDeleteTarget(null)}
             onDelete={confirmDelete}
+            submitting={submitting}
           />
         )}
       </AdminLayout>
@@ -297,7 +320,11 @@ function AdminCategoryManagementPage() {
         </div>
       </div>
 
-      {filteredCategories.length === 0 && (
+      {loading && (
+        <p className="py-10 text-center text-muted-foreground">Loading categories...</p>
+      )}
+
+      {!loading && filteredCategories.length === 0 && (
         <p className="py-10 text-center text-muted-foreground">
           No categories match this filter.
         </p>
@@ -308,13 +335,14 @@ function AdminCategoryManagementPage() {
           category={deleteTarget}
           onCancel={() => setDeleteTarget(null)}
           onDelete={confirmDelete}
+          submitting={submitting}
         />
       )}
     </AdminLayout>
   )
 }
 
-function DeleteCategoryDialog({ category, onCancel, onDelete }) {
+function DeleteCategoryDialog({ category, onCancel, onDelete, submitting }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
       <div className="relative w-full max-w-[360px] rounded-md bg-background px-10 py-8 text-center shadow-lg">
@@ -341,9 +369,10 @@ function DeleteCategoryDialog({ category, onCancel, onDelete }) {
           <button
             type="button"
             onClick={onDelete}
-            className="rounded-full bg-foreground px-6 py-2 text-sm font-medium text-white hover:bg-muted-foreground"
+            disabled={submitting}
+            className="rounded-full bg-foreground px-6 py-2 text-sm font-medium text-white hover:bg-muted-foreground disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Delete
+            {submitting ? 'Deleting...' : 'Delete'}
           </button>
         </div>
       </div>

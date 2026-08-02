@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   ChevronDown,
   Image,
@@ -12,9 +12,10 @@ import { toast } from 'sonner'
 import AdminLayout from '../components/AdminLayout'
 import {
   createAdminArticle,
+  deleteAdminArticle,
   getAdminArticles,
-  saveAdminArticles,
   updateAdminArticle,
+  uploadArticleImage,
 } from '../services/articleAdminService'
 import { getAdminCategories } from '../services/categoryAdminService'
 
@@ -24,6 +25,10 @@ const emptyForm = {
   image: '',
   description: '',
   content: '',
+}
+
+function getErrorMessage(error, fallback) {
+  return error.response?.data?.error || fallback
 }
 
 function getStatusMeta(status) {
@@ -53,16 +58,41 @@ function getArticleForm(article) {
 }
 
 function AdminArticleManagementPage() {
-  const [categories] = useState(() => getAdminCategories())
-  const [articles, setArticles] = useState(() => getAdminArticles())
+  const [categories, setCategories] = useState([])
+  const [articles, setArticles] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
+  const [uploading, setUploading] = useState(false)
   const [view, setView] = useState('list')
   const [form, setForm] = useState(emptyForm)
   const [editingId, setEditingId] = useState(null)
   const [errors, setErrors] = useState({})
+  const [apiError, setApiError] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [search, setSearch] = useState('')
   const [deleteTarget, setDeleteTarget] = useState(null)
+
+  useEffect(() => {
+    let cancelled = false
+
+    Promise.all([getAdminArticles(), getAdminCategories()])
+      .then(([articlesData, categoriesData]) => {
+        if (cancelled) return
+        setArticles(articlesData)
+        setCategories(categoriesData)
+      })
+      .catch((error) => {
+        if (!cancelled) setApiError(getErrorMessage(error, 'Unable to load articles.'))
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const editingArticle = useMemo(
     () => articles.find((article) => article.id === editingId),
@@ -103,9 +133,8 @@ function AdminArticleManagementPage() {
     return Object.keys(next).length === 0
   }
 
-  const persist = (nextArticles) => {
-    setArticles(nextArticles)
-    saveAdminArticles(nextArticles)
+  const refreshArticles = async () => {
+    setArticles(await getAdminArticles())
   }
 
   const openCreate = () => {
@@ -133,48 +162,66 @@ function AdminArticleManagementPage() {
     toast.success(title, { description: message })
   }
 
-  const submitArticle = (status) => {
+  const submitArticle = async (status) => {
     if (!validate()) return
 
-    if (editingArticle) {
-      persist(
-        articles.map((article) =>
-          article.id === editingArticle.id
-            ? updateAdminArticle(article, form, status)
-            : article,
-        ),
-      )
-      showToast('Article updated', 'Your article has been successfully saved')
+    setSubmitting(true)
+    try {
+      if (editingArticle) {
+        await updateAdminArticle(editingArticle, form, status)
+        showToast('Article updated', 'Your article has been successfully saved')
+      } else {
+        await createAdminArticle(form, status)
+        showToast(
+          status === 'published'
+            ? 'Create article and published'
+            : 'Create article and saved as draft',
+          status === 'published'
+            ? 'Your article has been successfully published'
+            : 'You can publish article later',
+        )
+      }
+
+      await refreshArticles()
       closeForm()
-      return
+    } catch (error) {
+      setApiError(getErrorMessage(error, 'Unable to save article.'))
+    } finally {
+      setSubmitting(false)
     }
-
-    persist([createAdminArticle(form, status), ...articles])
-    showToast(
-      status === 'published'
-        ? 'Create article and published'
-        : 'Create article and saved as draft',
-      status === 'published'
-        ? 'Your article has been successfully published'
-        : 'You can publish article later',
-    )
-    closeForm()
   }
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (!deleteTarget) return
-    persist(articles.filter((article) => article.id !== deleteTarget.id))
-    setDeleteTarget(null)
-    showToast('Article deleted', 'Your article has been deleted')
+
+    setSubmitting(true)
+    try {
+      await deleteAdminArticle(deleteTarget.id)
+      await refreshArticles()
+      if (editingId === deleteTarget.id) closeForm()
+      setDeleteTarget(null)
+      showToast('Article deleted', 'Your article has been deleted')
+    } catch (error) {
+      setApiError(getErrorMessage(error, 'Unable to delete article.'))
+      setDeleteTarget(null)
+    } finally {
+      setSubmitting(false)
+    }
   }
 
-  const handleImageUpload = (event) => {
+  const handleImageUpload = async (event) => {
     const file = event.target.files?.[0]
     if (!file) return
 
-    const reader = new FileReader()
-    reader.onload = () => updateForm('image', reader.result)
-    reader.readAsDataURL(file)
+    setUploading(true)
+    try {
+      const url = await uploadArticleImage(file)
+      updateForm('image', url)
+    } catch (error) {
+      setApiError(getErrorMessage(error, 'Unable to upload image.'))
+    } finally {
+      setUploading(false)
+    }
   }
 
   if (view === 'form') {
@@ -188,7 +235,8 @@ function AdminArticleManagementPage() {
             <button
               type="button"
               onClick={() => submitArticle('draft')}
-              className="rounded-full border border-foreground px-8 py-2 text-sm font-medium hover:border-muted-foreground hover:text-muted-foreground"
+              disabled={submitting || uploading}
+              className="rounded-full border border-foreground px-8 py-2 text-sm font-medium hover:border-muted-foreground hover:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-60"
             >
               Save as draft
             </button>
@@ -197,14 +245,21 @@ function AdminArticleManagementPage() {
               onClick={() =>
                 submitArticle(isEditing ? editingArticle.status : 'published')
               }
-              className="rounded-full bg-foreground px-8 py-2 text-sm font-medium text-white hover:bg-muted-foreground"
+              disabled={submitting || uploading}
+              className="rounded-full bg-foreground px-8 py-2 text-sm font-medium text-white hover:bg-muted-foreground disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isEditing ? 'Save' : 'Save and publish'}
+              {submitting ? 'Saving...' : isEditing ? 'Save' : 'Save and publish'}
             </button>
           </>
         }
       >
         <form className="max-w-[760px]" onSubmit={(e) => e.preventDefault()}>
+          {apiError && (
+            <div className="mb-5 rounded-sm bg-red-500 px-5 py-3 text-sm font-medium text-white">
+              {apiError}
+            </div>
+          )}
+
           <div className="space-y-6">
             <div>
               <p className="mb-3 text-sm font-medium text-muted-foreground">
@@ -222,12 +277,13 @@ function AdminArticleManagementPage() {
                     <Image className="h-8 w-8 text-muted-foreground" />
                   )}
                 </div>
-                <label className="inline-flex w-fit cursor-pointer rounded-full border border-foreground px-8 py-2 text-sm font-medium hover:border-muted-foreground hover:text-muted-foreground">
-                  Upload thumbnail image
+                <label className="inline-flex w-fit cursor-pointer rounded-full border border-foreground px-8 py-2 text-sm font-medium hover:border-muted-foreground hover:text-muted-foreground has-disabled:cursor-not-allowed has-disabled:opacity-60">
+                  {uploading ? 'Uploading...' : 'Upload thumbnail image'}
                   <input
                     type="file"
                     accept="image/*"
                     className="sr-only"
+                    disabled={uploading}
                     onChange={handleImageUpload}
                   />
                 </label>
@@ -342,6 +398,7 @@ function AdminArticleManagementPage() {
           <DeleteArticleDialog
             onCancel={() => setDeleteTarget(null)}
             onDelete={confirmDelete}
+            submitting={submitting}
           />
         )}
       </AdminLayout>
@@ -362,6 +419,12 @@ function AdminArticleManagementPage() {
         </button>
       }
     >
+      {apiError && (
+        <div className="mb-5 rounded-sm bg-red-500 px-5 py-3 text-sm font-medium text-white">
+          {apiError}
+        </div>
+      )}
+
       <div className="mb-4 grid gap-4 md:grid-cols-[minmax(0,280px)_1fr_160px_160px]">
         <div className="relative md:col-start-1">
           <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -457,7 +520,11 @@ function AdminArticleManagementPage() {
         </table>
       </div>
 
-      {filteredArticles.length === 0 && (
+      {loading && (
+        <p className="py-10 text-center text-muted-foreground">Loading articles...</p>
+      )}
+
+      {!loading && filteredArticles.length === 0 && (
         <p className="py-10 text-center text-muted-foreground">
           No articles match this filter.
         </p>
@@ -467,6 +534,7 @@ function AdminArticleManagementPage() {
         <DeleteArticleDialog
           onCancel={() => setDeleteTarget(null)}
           onDelete={confirmDelete}
+          submitting={submitting}
         />
       )}
     </AdminLayout>
@@ -489,7 +557,7 @@ function StatusLabel({ status }) {
   )
 }
 
-function DeleteArticleDialog({ onCancel, onDelete }) {
+function DeleteArticleDialog({ onCancel, onDelete, submitting }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
       <div className="relative w-full max-w-[360px] rounded-md bg-background px-10 py-8 text-center shadow-lg">
@@ -516,9 +584,10 @@ function DeleteArticleDialog({ onCancel, onDelete }) {
           <button
             type="button"
             onClick={onDelete}
-            className="rounded-full bg-foreground px-6 py-2 text-sm font-medium text-white hover:bg-muted-foreground"
+            disabled={submitting}
+            className="rounded-full bg-foreground px-6 py-2 text-sm font-medium text-white hover:bg-muted-foreground disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Delete
+            {submitting ? 'Deleting...' : 'Delete'}
           </button>
         </div>
       </div>
