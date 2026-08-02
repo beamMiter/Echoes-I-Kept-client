@@ -97,11 +97,21 @@ function Navbar() {
                 aria-expanded={dropdownOpen}
                 aria-haspopup="menu"
               >
-                <img
-                  src={state.user.profilePic}
-                  alt="Profile"
-                  className="h-10 w-10 shrink-0 rounded-full object-cover ring-2 ring-[#D9D8D4]"
-                />
+                {state.user.profilePic ? (
+                  <img
+                    src={state.user.profilePic}
+                    alt="Profile"
+                    className="h-10 w-10 shrink-0 rounded-full object-cover ring-2 ring-[#D9D8D4]"
+                  />
+                ) : (
+                  <div
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#7B7974] text-white ring-2 ring-[#D9D8D4]"
+                    role="img"
+                    aria-label="Profile placeholder"
+                  >
+                    <User className="h-5 w-5" strokeWidth={1.5} />
+                  </div>
+                )}
                 <span className="min-w-0 max-w-40 truncate">
                   {state.user.name}
                 </span>
@@ -230,11 +240,21 @@ function Navbar() {
             ) : isAuthenticated ? (
               <div className="space-y-1">
                 <div className="flex items-center py-2 mb-2">
-                  <img
-                    src={state.user.profilePic}
-                    alt="Profile"
-                    className="h-12 w-12 rounded-full object-cover ring-2 ring-[#D9D8D4]"
-                  />
+                  {state.user.profilePic ? (
+                    <img
+                      src={state.user.profilePic}
+                      alt="Profile"
+                      className="h-12 w-12 rounded-full object-cover ring-2 ring-[#D9D8D4]"
+                    />
+                  ) : (
+                    <div
+                      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#7B7974] text-white ring-2 ring-[#D9D8D4]"
+                      role="img"
+                      aria-label="Profile placeholder"
+                    >
+                      <User className="h-6 w-6" strokeWidth={1.5} />
+                    </div>
+                  )}
                   <span className="ml-3 text-base font-medium text-foreground">
                     {state.user.name}
                   </span>
