@@ -15,10 +15,6 @@ import {
   getPostHeroImage,
   getPostHeroImagePosition,
 } from "../data/mockPosts";
-import {
-  getPublishedAdminArticleById,
-  hasAdminArticleStore,
-} from "../services/articleAdminService";
 import { fetchPublishedPostById } from "../services/postsService";
 import { useAuth } from "../context/useAuth";
 import { getCategoryTextStyles } from "../utils/categoryStyles";
@@ -60,10 +56,6 @@ function PostDetailBody({ postId, detailImageSource }) {
     let cancelled = false;
 
     const resolvePost = () => {
-      if (hasAdminArticleStore()) {
-        return Promise.resolve(getPublishedAdminArticleById(postId));
-      }
-
       return fetchPublishedPostById(postId).catch(() => detailImageSource);
     };
 
