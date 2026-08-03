@@ -139,10 +139,10 @@ function MyArticleFormPage() {
         <div className="mb-8">
           <button
             type="button"
-            onClick={() => navigate('/my-posts')}
+            onClick={() => navigate(-1)}
             className="mb-4 text-sm text-muted-foreground hover:text-foreground"
           >
-            ← Back to my posts
+            ← Back
           </button>
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-2xl font-bold md:text-3xl">
@@ -203,7 +203,7 @@ function MyArticleFormPage() {
               </button>
               <button
                 type="button"
-                onClick={() => navigate('/my-posts')}
+                onClick={() => navigate(-1)}
                 className="rounded-full border border-foreground px-8 py-2 text-sm font-medium hover:border-muted-foreground hover:text-muted-foreground"
               >
                 Cancel
