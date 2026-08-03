@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import AdminLayout from '../components/AdminLayout'
+import LoadingSpinner from '../components/LoadingSpinner'
 import ConfirmDialog from '../components/ConfirmDialog'
 import {
   approveArticle,
@@ -95,7 +96,7 @@ function AdminContentModerationPage() {
       </p>
 
       {loading && (
-        <p className="py-10 text-center text-muted-foreground">Loading review queue...</p>
+        <LoadingSpinner />
       )}
 
       {!loading && articles.length === 0 && (
