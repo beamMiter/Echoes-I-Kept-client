@@ -1,5 +1,7 @@
 import { useRef, useState } from 'react'
-import { ChevronDown, Image, ImagePlus } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
+import { ChevronDown, Eye, Image, ImagePlus, PenLine } from 'lucide-react'
+import { toMarkdownContent } from '../utils/markdown'
 
 // Form state helpers live in ../utils/articleForm — keeping this file to a
 // single component export is what the react-refresh lint rule requires.
@@ -20,6 +22,7 @@ function ArticleForm({
 }) {
   const contentRef = useRef(null)
   const [insertingImage, setInsertingImage] = useState(false)
+  const [previewingContent, setPreviewingContent] = useState(false)
 
   const handleInsertContentImage = async (event) => {
     const file = event.target.files?.[0]
@@ -186,28 +189,59 @@ function ArticleForm({
           >
             Content
           </label>
-          {onUploadContentImage && (
-            <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-foreground px-3 py-1 text-xs font-medium hover:border-muted-foreground hover:text-muted-foreground has-disabled:cursor-not-allowed has-disabled:opacity-60">
-              <ImagePlus className="h-3.5 w-3.5" aria-hidden="true" />
-              {insertingImage ? 'Uploading...' : 'Insert image'}
-              <input
-                type="file"
-                accept="image/*"
-                className="sr-only"
-                disabled={insertingImage}
-                onChange={handleInsertContentImage}
-              />
-            </label>
-          )}
+          <div className="flex items-center gap-2">
+            {onUploadContentImage && !previewingContent && (
+              <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-foreground px-3 py-1 text-xs font-medium hover:border-muted-foreground hover:text-muted-foreground has-disabled:cursor-not-allowed has-disabled:opacity-60">
+                <ImagePlus className="h-3.5 w-3.5" aria-hidden="true" />
+                {insertingImage ? 'Uploading...' : 'Insert image'}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="sr-only"
+                  disabled={insertingImage}
+                  onChange={handleInsertContentImage}
+                />
+              </label>
+            )}
+            <button
+              type="button"
+              onClick={() => setPreviewingContent((prev) => !prev)}
+              className="inline-flex items-center gap-1.5 rounded-md border border-foreground px-3 py-1 text-xs font-medium hover:border-muted-foreground hover:text-muted-foreground"
+            >
+              {previewingContent ? (
+                <>
+                  <PenLine className="h-3.5 w-3.5" aria-hidden="true" />
+                  Write
+                </>
+              ) : (
+                <>
+                  <Eye className="h-3.5 w-3.5" aria-hidden="true" />
+                  Preview
+                </>
+              )}
+            </button>
+          </div>
         </div>
-        <textarea
-          id="article-content"
-          ref={contentRef}
-          value={form.content}
-          onChange={(event) => onChange('content', event.target.value)}
-          className="min-h-[420px] w-full rounded-sm border border-input bg-background px-3 py-3 text-sm focus-visible:border-muted-foreground focus-visible:outline-none"
-          placeholder="Content"
-        />
+        {previewingContent ? (
+          <div className="markdown min-h-[420px] w-full rounded-sm border border-input bg-background px-3 py-3 font-sans text-[15px] leading-[1.55]">
+            {form.content ? (
+              <ReactMarkdown>{toMarkdownContent(form.content)}</ReactMarkdown>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Nothing to preview yet.
+              </p>
+            )}
+          </div>
+        ) : (
+          <textarea
+            id="article-content"
+            ref={contentRef}
+            value={form.content}
+            onChange={(event) => onChange('content', event.target.value)}
+            className="min-h-[420px] w-full rounded-sm border border-input bg-background px-3 py-3 text-sm focus-visible:border-muted-foreground focus-visible:outline-none"
+            placeholder="Content"
+          />
+        )}
         {errors.content && (
           <span className="text-xs text-red-500">{errors.content}</span>
         )}

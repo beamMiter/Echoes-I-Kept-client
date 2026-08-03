@@ -17,6 +17,7 @@ import {
   getPostHeroImagePosition,
 } from "../data/mockPosts";
 import { fetchPublishedPostById } from "../services/postsService";
+import { toMarkdownContent } from "../utils/markdown";
 import { useAuth } from "../context/useAuth";
 import { getCategoryTextStyles } from "../utils/categoryStyles";
 
@@ -24,12 +25,6 @@ const pageShellClassName = "no-image-drag flex flex-col min-h-screen";
 
 function preventImageDrag(e) {
   if (e.target instanceof HTMLImageElement) e.preventDefault();
-}
-
-function toMarkdownContent(content) {
-  if (!content) return null;
-
-  return content.replace(/(^|\n)(\d+\.\s[^\n]+)/g, "$1## $2");
 }
 
 function PostDetailPage() {
