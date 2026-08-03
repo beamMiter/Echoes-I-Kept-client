@@ -180,7 +180,7 @@ function MyArticleFormPage() {
         {loading ? (
           <p className="py-16 text-center text-muted-foreground">Loading...</p>
         ) : (
-          <form onSubmit={(event) => event.preventDefault()}>
+          <form className="max-w-[760px]" onSubmit={(event) => event.preventDefault()}>
             <ArticleForm
               form={form}
               errors={errors}

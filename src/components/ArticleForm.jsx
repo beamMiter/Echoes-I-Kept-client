@@ -50,7 +50,7 @@ function ArticleForm({
         )}
       </div>
 
-      <label className="block space-y-2">
+      <label className="flex flex-col gap-2">
         <span className="text-sm font-medium text-muted-foreground">Category</span>
         <div className="relative w-[360px] max-w-full">
           <select
@@ -74,7 +74,7 @@ function ArticleForm({
         )}
       </label>
 
-      <label className="block space-y-2">
+      <label className="flex flex-col gap-2">
         <span className="text-sm font-medium text-muted-foreground">
           Author name
         </span>
@@ -85,7 +85,7 @@ function ArticleForm({
         />
       </label>
 
-      <label className="block space-y-2">
+      <label className="flex flex-col gap-2">
         <span className="text-sm font-medium text-muted-foreground">Title</span>
         <input
           value={form.title}
@@ -96,7 +96,7 @@ function ArticleForm({
         {errors.title && <span className="text-xs text-red-500">{errors.title}</span>}
       </label>
 
-      <label className="block space-y-2">
+      <label className="flex flex-col gap-2">
         <span className="text-sm font-medium text-muted-foreground">
           Introduction (max 120 letters)
         </span>
@@ -112,7 +112,7 @@ function ArticleForm({
         )}
       </label>
 
-      <label className="block space-y-2">
+      <label className="flex flex-col gap-2">
         <span className="text-sm font-medium text-muted-foreground">Content</span>
         <textarea
           value={form.content}
