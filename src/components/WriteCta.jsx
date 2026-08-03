@@ -1,20 +1,15 @@
 import { Link } from 'react-router-dom'
 import { NotebookPen } from 'lucide-react'
-import { useAuth } from '../context/useAuth'
 
 // Rendered as LatestArticles' `ctaSlot` — a row inside its shared
 // rounded bg-[#EFEEEB] box, above the category tabs, separated by a
 // divider — rather than its own section, so the homepage reads as one
 // continuous block instead of two stacked cards.
 //
-// Logged-out visitors still see this — clicking it sends them through
-// ProtectedRoute's redirect to /login, same as any other protected link.
-// Hidden for admins, who manage posts through the admin panel instead
-// (matches Navbar/AccountLayout, which hide "My posts" the same way).
+// Shown to every visitor, logged in or not, admin or member. Logged-out
+// visitors get sent through ProtectedRoute's normal /login redirect on
+// click, same as any other protected link.
 function WriteCta() {
-  const { state } = useAuth()
-  if (state.user?.role === 'admin') return null
-
   return (
     <div className="mb-3 flex flex-col items-center justify-between gap-4 border-b border-[#D7D3CE] pb-3 text-center sm:flex-row sm:text-left">
       <div>

@@ -24,19 +24,17 @@ function AccountLayout({ activePage, children, layout = 'default', title }) {
       path: resetPasswordPath,
       value: 'reset-password',
     },
-    // Members only — admins manage posts through the admin panel, and this
-    // layout renders inside AdminLayout on /admin/* paths where a bare
-    // /my-posts link would navigate them out of the admin chrome.
-    ...(state.user?.role === 'admin'
-      ? []
-      : [
-          {
-            icon: NotebookTabs,
-            label: 'My posts',
-            path: '/my-posts',
-            value: 'my-posts',
-          },
-        ]),
+    // Shown for every role — the admin panel is a separate management tool,
+    // not a replacement for this. Note: when this layout renders inside
+    // AdminLayout on /admin/* paths, clicking this takes an admin out of the
+    // admin chrome and onto the regular /my-posts page, which is expected —
+    // they're switching into the same experience a regular member gets.
+    {
+      icon: NotebookTabs,
+      label: 'My posts',
+      path: '/my-posts',
+      value: 'my-posts',
+    },
   ]
 
   const containerClassName = isEnhancedAccountLayout

@@ -96,10 +96,20 @@ function MyArticleFormPage() {
     setApiError('')
     try {
       if (isEditing) {
-        await updateMyArticle(postId, form)
-        toast.success('Sent for review', {
-          description: 'Your changes will be published once an admin approves them.',
-        })
+        await updateMyArticle(postId, form, existing?.status)
+        // A non-admin author's edit always goes back to pending, whatever
+        // status the post had before. An admin editing their own post here
+        // keeps its current status — they don't need "sent for review"
+        // wording for something that, say, stayed published.
+        if (state.user?.role === 'admin') {
+          toast.success('Saved', {
+            description: 'Your changes have been saved.',
+          })
+        } else {
+          toast.success('Sent for review', {
+            description: 'Your changes will be published once an admin approves them.',
+          })
+        }
       } else {
         await submitArticle(form)
         toast.success('Submitted for review', {
@@ -120,9 +130,10 @@ function MyArticleFormPage() {
     setErrors(nextErrors)
     if (Object.keys(nextErrors).length > 0) return
 
-    // Editing a live post takes it off the site until it's re-approved, so
-    // make sure that isn't a surprise.
-    if (existing?.status === 'published') {
+    // Editing a live post takes it off the site until it's re-approved —
+    // but only for a non-admin author. An admin's edit keeps the post
+    // published, so there's nothing to warn them about.
+    if (existing?.status === 'published' && state.user?.role !== 'admin') {
       setConfirmingUnpublish(true)
       return
     }

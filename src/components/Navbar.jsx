@@ -150,20 +150,18 @@ function Navbar() {
                     <KeyRound className="mr-2 h-4 w-4 opacity-60" />
                     Reset password
                   </button>
-                  {state.user.role !== "admin" && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setDropdownOpen(false);
-                        navigate("/my-posts");
-                      }}
-                      className="flex w-full cursor-pointer items-center px-3 py-2 text-sm text-foreground rounded-sm hover:bg-[#EFEEEB] hover:text-muted-foreground transition-colors"
-                      role="menuitem"
-                    >
-                      <NotebookTabs className="mr-2 h-4 w-4 opacity-60" />
-                      My posts
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDropdownOpen(false);
+                      navigate("/my-posts");
+                    }}
+                    className="flex w-full cursor-pointer items-center px-3 py-2 text-sm text-foreground rounded-sm hover:bg-[#EFEEEB] hover:text-muted-foreground transition-colors"
+                    role="menuitem"
+                  >
+                    <NotebookTabs className="mr-2 h-4 w-4 opacity-60" />
+                    My posts
+                  </button>
                   {state.user.role === "admin" && (
                     <button
                       type="button"
@@ -300,19 +298,17 @@ function Navbar() {
                   <KeyRound className="mr-3 h-4 w-4 opacity-60" />
                   Reset password
                 </button>
-                {state.user.role !== "admin" && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      navigate("/my-posts");
-                    }}
-                    className="flex items-center w-full px-4 py-2.5 text-sm font-medium text-foreground hover:bg-[#E2E1DD] rounded-md transition-colors"
-                  >
-                    <NotebookTabs className="mr-3 h-4 w-4 opacity-60" />
-                    My posts
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    navigate("/my-posts");
+                  }}
+                  className="flex items-center w-full px-4 py-2.5 text-sm font-medium text-foreground hover:bg-[#E2E1DD] rounded-md transition-colors"
+                >
+                  <NotebookTabs className="mr-3 h-4 w-4 opacity-60" />
+                  My posts
+                </button>
                 {state.user.role === "admin" && (
                   <button
                     type="button"
