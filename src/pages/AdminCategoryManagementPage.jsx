@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Pencil, Plus, Search, Trash2, X } from 'lucide-react'
 import { toast } from 'sonner'
 import AdminLayout from '../components/AdminLayout'
+import LoadingSpinner from '../components/LoadingSpinner'
 import {
   createAdminCategory,
   deleteAdminCategory,
@@ -321,7 +322,7 @@ function AdminCategoryManagementPage() {
       </div>
 
       {loading && (
-        <p className="py-10 text-center text-muted-foreground">Loading categories...</p>
+        <LoadingSpinner />
       )}
 
       {!loading && filteredCategories.length === 0 && (

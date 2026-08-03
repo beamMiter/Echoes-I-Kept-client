@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import AdminLayout from '../components/AdminLayout'
+import LoadingSpinner from '../components/LoadingSpinner'
 import {
   createAdminMember,
   deleteAdminMember,
@@ -542,7 +543,7 @@ function AdminMemberManagementPage() {
       </div>
 
       {loading && (
-        <p className="py-10 text-center text-muted-foreground">Loading members...</p>
+        <LoadingSpinner />
       )}
 
       {!loading && filteredMembers.length === 0 && (

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { ChevronDown, Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import AdminLayout from '../components/AdminLayout'
+import LoadingSpinner from '../components/LoadingSpinner'
 import ArticleForm from '../components/ArticleForm'
 import ConfirmDialog from '../components/ConfirmDialog'
 import {
@@ -18,6 +19,7 @@ import {
   getArticleForm,
   validateArticleForm,
 } from '../utils/articleForm'
+import { useAuth } from '../context/useAuth'
 
 const emptyForm = { ...emptyArticleForm, category: 'Pop' }
 
@@ -26,6 +28,7 @@ function getErrorMessage(error, fallback) {
 }
 
 function AdminArticleManagementPage() {
+  const { state } = useAuth()
   const [categories, setCategories] = useState([])
   const [articles, setArticles] = useState([])
   const [loading, setLoading] = useState(true)
@@ -216,7 +219,7 @@ function AdminArticleManagementPage() {
             form={form}
             errors={errors}
             categories={categories}
-            authorName="Techin B."
+            authorName={state.user?.name || ''}
             uploading={uploading}
             onChange={updateForm}
             onImageUpload={handleImageUpload}
@@ -401,7 +404,7 @@ function AdminArticleManagementPage() {
       </div>
 
       {loading && (
-        <p className="py-10 text-center text-muted-foreground">Loading articles...</p>
+        <LoadingSpinner />
       )}
 
       {!loading && filteredArticles.length === 0 && (
