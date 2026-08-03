@@ -202,6 +202,7 @@ function MyArticleFormPage() {
               uploading={uploading}
               onChange={updateForm}
               onImageUpload={handleImageUpload}
+              onUploadContentImage={uploadArticleImage}
             />
 
             <div className="mt-8 flex flex-wrap gap-3">

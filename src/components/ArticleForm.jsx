@@ -1,4 +1,5 @@
-import { ChevronDown, Image } from 'lucide-react'
+import { useRef, useState } from 'react'
+import { ChevronDown, Image, ImagePlus } from 'lucide-react'
 
 // Form state helpers live in ../utils/articleForm — keeping this file to a
 // single component export is what the react-refresh lint rule requires.
@@ -14,8 +15,32 @@ function ArticleForm({
   uploading = false,
   onChange,
   onImageUpload,
+  onUploadContentImage,
   footer,
 }) {
+  const contentRef = useRef(null)
+  const [insertingImage, setInsertingImage] = useState(false)
+
+  const handleInsertContentImage = async (event) => {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file || !onUploadContentImage) return
+
+    setInsertingImage(true)
+    try {
+      const url = await onUploadContentImage(file)
+      const textarea = contentRef.current
+      const cursor = textarea ? textarea.selectionStart : form.content.length
+      const needsLeadingNewline = cursor > 0 && form.content[cursor - 1] !== '\n'
+      const markdown = `${needsLeadingNewline ? '\n' : ''}![](${url})\n`
+      const nextContent =
+        form.content.slice(0, cursor) + markdown + form.content.slice(cursor)
+      onChange('content', nextContent)
+    } finally {
+      setInsertingImage(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -153,9 +178,31 @@ function ArticleForm({
         )}
       </label>
 
-      <label className="flex flex-col gap-2">
-        <span className="text-sm font-medium text-muted-foreground">Content</span>
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center justify-between gap-3">
+          <label
+            htmlFor="article-content"
+            className="text-sm font-medium text-muted-foreground"
+          >
+            Content
+          </label>
+          {onUploadContentImage && (
+            <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-foreground px-3 py-1 text-xs font-medium hover:border-muted-foreground hover:text-muted-foreground has-disabled:cursor-not-allowed has-disabled:opacity-60">
+              <ImagePlus className="h-3.5 w-3.5" aria-hidden="true" />
+              {insertingImage ? 'Uploading...' : 'Insert image'}
+              <input
+                type="file"
+                accept="image/*"
+                className="sr-only"
+                disabled={insertingImage}
+                onChange={handleInsertContentImage}
+              />
+            </label>
+          )}
+        </div>
         <textarea
+          id="article-content"
+          ref={contentRef}
           value={form.content}
           onChange={(event) => onChange('content', event.target.value)}
           className="min-h-[420px] w-full rounded-sm border border-input bg-background px-3 py-3 text-sm focus-visible:border-muted-foreground focus-visible:outline-none"
@@ -164,7 +211,7 @@ function ArticleForm({
         {errors.content && (
           <span className="text-xs text-red-500">{errors.content}</span>
         )}
-      </label>
+      </div>
 
       {footer}
     </div>

@@ -223,6 +223,7 @@ function AdminArticleManagementPage() {
             uploading={uploading}
             onChange={updateForm}
             onImageUpload={handleImageUpload}
+            onUploadContentImage={uploadArticleImage}
             footer={
               isEditing && (
                 <label className="flex flex-col gap-2">
