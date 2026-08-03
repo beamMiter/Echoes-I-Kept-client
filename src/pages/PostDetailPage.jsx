@@ -17,7 +17,6 @@ import {
   getPostHeroImagePosition,
 } from "../data/mockPosts";
 import { fetchPublishedPostById } from "../services/postsService";
-import { toMarkdownContent } from "../utils/markdown";
 import { useAuth } from "../context/useAuth";
 import { getCategoryTextStyles } from "../utils/categoryStyles";
 
@@ -214,7 +213,7 @@ function PostDetailContent({ post, postId, detailImageSource }) {
                 </p>
 
                 <div className="markdown font-sans text-[15px] leading-[1.55]">
-                  <ReactMarkdown>{toMarkdownContent(content)}</ReactMarkdown>
+                  <ReactMarkdown>{content}</ReactMarkdown>
                 </div>
               </article>
 

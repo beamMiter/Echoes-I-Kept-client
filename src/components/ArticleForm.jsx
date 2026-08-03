@@ -1,7 +1,6 @@
 import { useRef, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import { ChevronDown, Eye, Image, ImagePlus, PenLine } from 'lucide-react'
-import { toMarkdownContent } from '../utils/markdown'
 
 // Form state helpers live in ../utils/articleForm — keeping this file to a
 // single component export is what the react-refresh lint rule requires.
@@ -225,7 +224,7 @@ function ArticleForm({
         {previewingContent ? (
           <div className="markdown min-h-[420px] w-full rounded-sm border border-input bg-background px-3 py-3 font-sans text-[15px] leading-[1.55]">
             {form.content ? (
-              <ReactMarkdown>{toMarkdownContent(form.content)}</ReactMarkdown>
+              <ReactMarkdown>{form.content}</ReactMarkdown>
             ) : (
               <p className="text-sm text-muted-foreground">
                 Nothing to preview yet.
