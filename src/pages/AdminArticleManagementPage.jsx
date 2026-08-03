@@ -33,6 +33,7 @@ function AdminArticleManagementPage() {
   const [uploading, setUploading] = useState(false)
   const [view, setView] = useState('list')
   const [form, setForm] = useState(emptyForm)
+  const [status, setStatus] = useState('pending')
   const [editingId, setEditingId] = useState(null)
   const [errors, setErrors] = useState({})
   const [apiError, setApiError] = useState('')
@@ -101,6 +102,9 @@ function AdminArticleManagementPage() {
   const openCreate = () => {
     setEditingId(null)
     setForm({ ...emptyForm, category: categories[0]?.name || '' })
+    // Not shown as an editable control on create — every new post starts
+    // pending no matter what's sent, so this is purely for the request body.
+    setStatus('pending')
     setErrors({})
     setView('form')
   }
@@ -108,6 +112,7 @@ function AdminArticleManagementPage() {
   const openEdit = (article) => {
     setEditingId(article.id)
     setForm(getArticleForm(article))
+    setStatus(article.status)
     setErrors({})
     setView('form')
   }
@@ -123,7 +128,7 @@ function AdminArticleManagementPage() {
     toast.success(title, { description: message })
   }
 
-  const submitArticle = async (status) => {
+  const submitArticle = async () => {
     if (!validate()) return
 
     setSubmitting(true)
@@ -132,14 +137,12 @@ function AdminArticleManagementPage() {
         await updateAdminArticle(editingArticle, form, status)
         showToast('Article updated', 'Your article has been successfully saved')
       } else {
-        await createAdminArticle(form, status)
+        // The server forces every new post to pending regardless of what's
+        // sent here — see postsController.createPost.
+        await createAdminArticle(form, 'pending')
         showToast(
-          status === 'published'
-            ? 'Create article and published'
-            : 'Create article and saved as draft',
-          status === 'published'
-            ? 'Your article has been successfully published'
-            : 'You can publish article later',
+          'Article submitted',
+          'Change its status from the edit screen once you’re ready to publish it.',
         )
       }
 
@@ -192,26 +195,14 @@ function AdminArticleManagementPage() {
       <AdminLayout
         title={isEditing ? 'Edit article' : 'Create article'}
         actions={
-          <>
-            <button
-              type="button"
-              onClick={() => submitArticle('draft')}
-              disabled={submitting || uploading}
-              className="rounded-full border border-foreground px-8 py-2 text-sm font-medium hover:border-muted-foreground hover:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              Save as draft
-            </button>
-            <button
-              type="button"
-              onClick={() =>
-                submitArticle(isEditing ? editingArticle.status : 'published')
-              }
-              disabled={submitting || uploading}
-              className="rounded-full bg-foreground px-8 py-2 text-sm font-medium text-white hover:bg-muted-foreground disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {submitting ? 'Saving...' : isEditing ? 'Save' : 'Save and publish'}
-            </button>
-          </>
+          <button
+            type="button"
+            onClick={submitArticle}
+            disabled={submitting || uploading}
+            className="rounded-full bg-foreground px-8 py-2 text-sm font-medium text-white hover:bg-muted-foreground disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {submitting ? 'Saving...' : isEditing ? 'Save' : 'Submit'}
+          </button>
         }
       >
         <form className="max-w-[760px]" onSubmit={(e) => e.preventDefault()}>
@@ -229,6 +220,39 @@ function AdminArticleManagementPage() {
             uploading={uploading}
             onChange={updateForm}
             onImageUpload={handleImageUpload}
+            footer={
+              isEditing && (
+                <label className="flex flex-col gap-2">
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Status
+                  </span>
+                  <div className="relative w-[360px] max-w-full">
+                    <select
+                      value={status}
+                      onChange={(event) => setStatus(event.target.value)}
+                      className="h-10 w-full appearance-none rounded-sm border border-input bg-background px-3 pr-10 text-sm focus-visible:border-muted-foreground focus-visible:outline-none"
+                    >
+                      <option value="draft">Draft</option>
+                      <option value="pending">Pending review</option>
+                      <option value="published">Published</option>
+                      {/* Not a real choice to switch into from here — listed
+                          only so a post that's already rejected displays its
+                          true status instead of silently mismatching every
+                          option above. Rejecting needs a reason for the
+                          author, which only the Content moderation queue's
+                          dedicated dialog collects. */}
+                      {status === 'rejected' && (
+                        <option value="rejected">Rejected</option>
+                      )}
+                    </select>
+                    <ChevronDown
+                      className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                      aria-hidden="true"
+                    />
+                  </div>
+                </label>
+              )
+            }
           />
 
           {isEditing && (
