@@ -116,7 +116,13 @@ function NotificationBell({ compact = false, onNavigate }) {
   const openArticle = (notification) => {
     setOpen(false)
     onNavigate?.()
-    navigate(`/post/${notification.articleId}`)
+    // A rejected post isn't public, so there's nothing to show at /post/:id —
+    // send the author to their own list instead, where the reason is shown.
+    if (notification.type === 'post_rejected' || !notification.articleId) {
+      navigate('/my-posts')
+    } else {
+      navigate(`/post/${notification.articleId}`)
+    }
 
     markNotificationAsRead(notification.id)
       .then(() => {

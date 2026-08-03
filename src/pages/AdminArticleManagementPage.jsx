@@ -1,15 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
-import {
-  ChevronDown,
-  Image,
-  Pencil,
-  Plus,
-  Search,
-  Trash2,
-  X,
-} from 'lucide-react'
+import { ChevronDown, Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import AdminLayout from '../components/AdminLayout'
+import ArticleForm from '../components/ArticleForm'
+import ConfirmDialog from '../components/ConfirmDialog'
 import {
   createAdminArticle,
   deleteAdminArticle,
@@ -18,43 +12,17 @@ import {
   uploadArticleImage,
 } from '../services/articleAdminService'
 import { getAdminCategories } from '../services/categoryAdminService'
+import { getStatusMeta } from '../utils/postStatus'
+import {
+  emptyArticleForm,
+  getArticleForm,
+  validateArticleForm,
+} from '../utils/articleForm'
 
-const emptyForm = {
-  title: '',
-  category: 'Pop',
-  image: '',
-  description: '',
-  content: '',
-}
+const emptyForm = { ...emptyArticleForm, category: 'Pop' }
 
 function getErrorMessage(error, fallback) {
   return error.response?.data?.error || fallback
-}
-
-function getStatusMeta(status) {
-  return status === 'draft'
-    ? {
-        label: 'Draft',
-        className: 'text-muted-foreground',
-        dotClassName: 'bg-muted-foreground',
-      }
-    : {
-        label: 'Published',
-        className: 'text-[#12B76A]',
-        dotClassName: 'bg-[#12B76A]',
-      }
-}
-
-function getArticleForm(article) {
-  if (!article) return emptyForm
-
-  return {
-    title: article.title,
-    category: article.category,
-    image: article.image,
-    description: article.description,
-    content: article.content,
-  }
 }
 
 function AdminArticleManagementPage() {
@@ -121,14 +89,7 @@ function AdminArticleManagementPage() {
   }
 
   const validate = () => {
-    const next = {}
-
-    if (!form.title.trim()) next.title = 'Title is required.'
-    if (!form.category.trim()) next.category = 'Category is required.'
-    if (!form.image.trim()) next.image = 'Thumbnail image is required.'
-    if (!form.description.trim()) next.description = 'Introduction is required.'
-    if (!form.content.trim()) next.content = 'Content is required.'
-
+    const next = validateArticleForm(form)
     setErrors(next)
     return Object.keys(next).length === 0
   }
@@ -260,127 +221,15 @@ function AdminArticleManagementPage() {
             </div>
           )}
 
-          <div className="space-y-6">
-            <div>
-              <p className="mb-3 text-sm font-medium text-muted-foreground">
-                Thumbnail image
-              </p>
-              <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
-                <div className="flex h-[180px] w-[360px] max-w-full items-center justify-center overflow-hidden rounded-md bg-[#EFEEEB]">
-                  {form.image ? (
-                    <img
-                      src={form.image}
-                      alt="Thumbnail preview"
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <Image className="h-8 w-8 text-muted-foreground" />
-                  )}
-                </div>
-                <label className="inline-flex w-fit cursor-pointer rounded-full border border-foreground px-8 py-2 text-sm font-medium hover:border-muted-foreground hover:text-muted-foreground has-disabled:cursor-not-allowed has-disabled:opacity-60">
-                  {uploading ? 'Uploading...' : 'Upload thumbnail image'}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="sr-only"
-                    disabled={uploading}
-                    onChange={handleImageUpload}
-                  />
-                </label>
-              </div>
-              {errors.image && (
-                <span className="mt-2 block text-xs text-red-500">
-                  {errors.image}
-                </span>
-              )}
-            </div>
-
-            <label className="block space-y-2">
-              <span className="text-sm font-medium text-muted-foreground">
-                Category
-              </span>
-              <div className="relative w-[360px] max-w-full">
-                <select
-                  value={form.category}
-                  onChange={(event) =>
-                    updateForm('category', event.target.value)
-                  }
-                  className="h-10 w-full appearance-none rounded-sm border border-input bg-background px-3 pr-10 text-sm focus-visible:outline-none focus-visible:border-muted-foreground"
-                >
-                  {categories.map((category) => (
-                    <option key={category.id} value={category.name}>
-                      {category.name}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown
-                  className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-                  aria-hidden="true"
-                />
-              </div>
-            </label>
-
-            <label className="block space-y-2">
-              <span className="text-sm font-medium text-muted-foreground">
-                Author name
-              </span>
-              <input
-                value="Techin B."
-                disabled
-                className="h-10 w-[360px] max-w-full rounded-sm border border-transparent bg-[#FAFAF9] px-3 text-sm text-muted-foreground"
-              />
-            </label>
-
-            <label className="block space-y-2">
-              <span className="text-sm font-medium text-muted-foreground">
-                Title
-              </span>
-              <input
-                value={form.title}
-                onChange={(event) => updateForm('title', event.target.value)}
-                className="h-10 w-full rounded-sm border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:border-muted-foreground"
-                placeholder="Article title"
-              />
-              {errors.title && (
-                <span className="text-xs text-red-500">{errors.title}</span>
-              )}
-            </label>
-
-            <label className="block space-y-2">
-              <span className="text-sm font-medium text-muted-foreground">
-                Introduction (max 120 letters)
-              </span>
-              <textarea
-                value={form.description}
-                onChange={(event) =>
-                  updateForm('description', event.target.value)
-                }
-                className="min-h-28 w-full rounded-sm border border-input bg-background px-3 py-3 text-sm focus-visible:outline-none focus-visible:border-muted-foreground"
-                maxLength={120}
-                placeholder="Introduction"
-              />
-              {errors.description && (
-                <span className="text-xs text-red-500">
-                  {errors.description}
-                </span>
-              )}
-            </label>
-
-            <label className="block space-y-2">
-              <span className="text-sm font-medium text-muted-foreground">
-                Content
-              </span>
-              <textarea
-                value={form.content}
-                onChange={(event) => updateForm('content', event.target.value)}
-                className="min-h-[420px] w-full rounded-sm border border-input bg-background px-3 py-3 text-sm focus-visible:outline-none focus-visible:border-muted-foreground"
-                placeholder="Content"
-              />
-              {errors.content && (
-                <span className="text-xs text-red-500">{errors.content}</span>
-              )}
-            </label>
-          </div>
+          <ArticleForm
+            form={form}
+            errors={errors}
+            categories={categories}
+            authorName="Techin B."
+            uploading={uploading}
+            onChange={updateForm}
+            onImageUpload={handleImageUpload}
+          />
 
           {isEditing && (
             <button
@@ -395,10 +244,15 @@ function AdminArticleManagementPage() {
         </form>
 
         {deleteTarget && (
-          <DeleteArticleDialog
-            onCancel={() => setDeleteTarget(null)}
-            onDelete={confirmDelete}
+          <ConfirmDialog
+            title="Delete article"
+            message="Do you want to delete this article?"
+            confirmLabel="Delete"
+            pendingLabel="Deleting..."
+            destructive
             submitting={submitting}
+            onCancel={() => setDeleteTarget(null)}
+            onConfirm={confirmDelete}
           />
         )}
       </AdminLayout>
@@ -444,6 +298,8 @@ function AdminArticleManagementPage() {
           >
             <option value="all">Status</option>
             <option value="published">Published</option>
+            <option value="pending">Pending review</option>
+            <option value="rejected">Rejected</option>
             <option value="draft">Draft</option>
           </select>
           <ChevronDown
@@ -531,10 +387,15 @@ function AdminArticleManagementPage() {
       )}
 
       {deleteTarget && (
-        <DeleteArticleDialog
-          onCancel={() => setDeleteTarget(null)}
-          onDelete={confirmDelete}
+        <ConfirmDialog
+          title="Delete article"
+          message="Do you want to delete this article?"
+          confirmLabel="Delete"
+          pendingLabel="Deleting..."
+          destructive
           submitting={submitting}
+          onCancel={() => setDeleteTarget(null)}
+          onConfirm={confirmDelete}
         />
       )}
     </AdminLayout>
@@ -554,44 +415,6 @@ function StatusLabel({ status }) {
       />
       {statusMeta.label}
     </span>
-  )
-}
-
-function DeleteArticleDialog({ onCancel, onDelete, submitting }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-      <div className="relative w-full max-w-[360px] rounded-md bg-background px-10 py-8 text-center shadow-lg">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="absolute right-5 top-5 rounded-full p-1 text-muted-foreground hover:bg-[#EFEEEB] hover:text-foreground"
-          aria-label="Close delete article dialog"
-        >
-          <X className="h-4 w-4" />
-        </button>
-        <h2 className="text-xl font-bold">Delete article</h2>
-        <p className="mt-5 text-sm text-muted-foreground">
-          Do you want to delete this article?
-        </p>
-        <div className="mt-6 flex justify-center gap-3">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="rounded-full border border-foreground px-6 py-2 text-sm font-medium hover:border-muted-foreground hover:text-muted-foreground"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={onDelete}
-            disabled={submitting}
-            className="rounded-full bg-foreground px-6 py-2 text-sm font-medium text-white hover:bg-muted-foreground disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {submitting ? 'Deleting...' : 'Delete'}
-          </button>
-        </div>
-      </div>
-    </div>
   )
 }
 

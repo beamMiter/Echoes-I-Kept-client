@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { KeyRound, User } from 'lucide-react'
+import { KeyRound, NotebookTabs, User } from 'lucide-react'
 import Navbar from './Navbar'
 import Footer from './Footer'
 import AdminLayout from './AdminLayout'
@@ -24,6 +24,19 @@ function AccountLayout({ activePage, children, layout = 'default', title }) {
       path: resetPasswordPath,
       value: 'reset-password',
     },
+    // Members only — admins manage posts through the admin panel, and this
+    // layout renders inside AdminLayout on /admin/* paths where a bare
+    // /my-posts link would navigate them out of the admin chrome.
+    ...(state.user?.role === 'admin'
+      ? []
+      : [
+          {
+            icon: NotebookTabs,
+            label: 'My posts',
+            path: '/my-posts',
+            value: 'my-posts',
+          },
+        ]),
   ]
 
   const containerClassName = isEnhancedAccountLayout
