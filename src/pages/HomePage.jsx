@@ -15,8 +15,7 @@ function HomePage() {
       <Navbar />
       <div className="flex-grow">
         <HeroSection />
-        <WriteCta />
-        <LatestArticles />
+        <LatestArticles ctaSlot={<WriteCta />} />
       </div>
       <Footer />
     </div>
