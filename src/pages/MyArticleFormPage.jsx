@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft } from 'lucide-react'
+import { ChevronLeft } from 'lucide-react'
 import { toast } from 'sonner'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
@@ -164,7 +164,7 @@ function MyArticleFormPage() {
               onClick={() => navigate(-1)}
               className="group inline-flex shrink-0 items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-[#EFEEEB] hover:text-foreground"
             >
-              <ArrowLeft
+              <ChevronLeft
                 className="h-5 w-5 transition-transform duration-200 ease-out group-hover:-translate-x-1"
                 strokeWidth={2.5}
                 aria-hidden="true"
