@@ -34,7 +34,7 @@ function ArticleForm({
               <Image className="h-8 w-8 text-muted-foreground" />
             )}
           </div>
-          <label className="inline-flex w-fit cursor-pointer rounded-full border border-foreground px-8 py-2 text-sm font-medium hover:border-muted-foreground hover:text-muted-foreground has-disabled:cursor-not-allowed has-disabled:opacity-60">
+          <label className="inline-flex w-fit cursor-pointer rounded-md border border-foreground px-8 py-2 text-sm font-medium hover:border-muted-foreground hover:text-muted-foreground has-disabled:cursor-not-allowed has-disabled:opacity-60">
             {uploading ? 'Uploading...' : 'Upload thumbnail image'}
             <input
               type="file"

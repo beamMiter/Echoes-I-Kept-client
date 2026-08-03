@@ -232,7 +232,7 @@ function AdminMemberManagementPage() {
             <button
               type="button"
               onClick={closeForm}
-              className="rounded-full border border-foreground px-8 py-2 text-sm font-medium hover:border-muted-foreground hover:text-muted-foreground"
+              className="rounded-md border border-foreground px-8 py-2 text-sm font-medium hover:border-muted-foreground hover:text-muted-foreground"
             >
               Cancel
             </button>
@@ -240,7 +240,7 @@ function AdminMemberManagementPage() {
               type="button"
               onClick={submitMember}
               disabled={submitting}
-              className="rounded-full bg-foreground px-8 py-2 text-sm font-medium text-white hover:bg-muted-foreground disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-md bg-foreground px-8 py-2 text-sm font-medium text-white hover:bg-muted-foreground disabled:cursor-not-allowed disabled:opacity-60"
             >
               {submitting ? 'Saving...' : 'Save'}
             </button>
@@ -405,7 +405,7 @@ function AdminMemberManagementPage() {
         <button
           type="button"
           onClick={openCreate}
-          className="inline-flex items-center gap-2 rounded-full bg-foreground px-8 py-2 text-sm font-medium text-white hover:bg-muted-foreground"
+          className="inline-flex items-center gap-2 rounded-md bg-foreground px-8 py-2 text-sm font-medium text-white hover:bg-muted-foreground"
         >
           <Plus className="h-4 w-4" aria-hidden="true" />
           Create member
@@ -593,7 +593,7 @@ function DeleteMemberDialog({ member, onCancel, onDelete, submitting }) {
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-full border border-foreground px-6 py-2 text-sm font-medium hover:border-muted-foreground hover:text-muted-foreground"
+            className="rounded-md border border-foreground px-6 py-2 text-sm font-medium hover:border-muted-foreground hover:text-muted-foreground"
           >
             Cancel
           </button>
@@ -601,7 +601,7 @@ function DeleteMemberDialog({ member, onCancel, onDelete, submitting }) {
             type="button"
             onClick={onDelete}
             disabled={submitting}
-            className="rounded-full bg-foreground px-6 py-2 text-sm font-medium text-white hover:bg-muted-foreground disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-md bg-foreground px-6 py-2 text-sm font-medium text-white hover:bg-muted-foreground disabled:cursor-not-allowed disabled:opacity-60"
           >
             {submitting ? 'Deleting...' : 'Delete'}
           </button>

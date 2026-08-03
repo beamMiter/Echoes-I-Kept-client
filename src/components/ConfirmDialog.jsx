@@ -55,7 +55,7 @@ function ConfirmDialog({
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-full border border-foreground px-6 py-2 text-sm font-medium hover:border-muted-foreground hover:text-muted-foreground"
+            className="rounded-md border border-foreground px-6 py-2 text-sm font-medium hover:border-muted-foreground hover:text-muted-foreground"
           >
             {cancelLabel}
           </button>
@@ -63,7 +63,7 @@ function ConfirmDialog({
             type="button"
             onClick={onConfirm}
             disabled={confirmDisabled}
-            className={`rounded-full px-6 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60 ${
+            className={`rounded-md px-6 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60 ${
               destructive
                 ? 'bg-red-600 hover:bg-red-500'
                 : 'bg-foreground hover:bg-muted-foreground'

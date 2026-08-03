@@ -202,7 +202,7 @@ function AdminArticleManagementPage() {
             type="button"
             onClick={submitArticle}
             disabled={submitting || uploading}
-            className="rounded-full bg-foreground px-8 py-2 text-sm font-medium text-white hover:bg-muted-foreground disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-md bg-foreground px-8 py-2 text-sm font-medium text-white hover:bg-muted-foreground disabled:cursor-not-allowed disabled:opacity-60"
           >
             {submitting ? 'Saving...' : isEditing ? 'Save' : 'Submit'}
           </button>
@@ -293,7 +293,7 @@ function AdminArticleManagementPage() {
         <button
           type="button"
           onClick={openCreate}
-          className="inline-flex items-center gap-2 rounded-full bg-foreground px-8 py-2 text-sm font-medium text-white hover:bg-muted-foreground"
+          className="inline-flex items-center gap-2 rounded-md bg-foreground px-8 py-2 text-sm font-medium text-white hover:bg-muted-foreground"
         >
           <Plus className="h-4 w-4" aria-hidden="true" />
           Create article

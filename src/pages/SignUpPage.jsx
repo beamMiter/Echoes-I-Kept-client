@@ -219,7 +219,7 @@ function SignUpPage() {
               <button
                 type="submit"
                 disabled={state.loading}
-                className="px-8 py-2 bg-foreground text-white rounded-full hover:bg-muted-foreground transition-colors flex items-center gap-2"
+                className="px-8 py-2 bg-foreground text-white rounded-md hover:bg-muted-foreground transition-colors flex items-center gap-2"
               >
                 {state.loading && <Loader2 className="animate-spin" size={20} />}
                 Sign up

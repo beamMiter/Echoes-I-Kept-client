@@ -23,7 +23,7 @@ function WriteCta() {
       </div>
       <Link
         to="/my-posts/new"
-        className="inline-flex shrink-0 items-center gap-2 rounded-full bg-foreground px-6 py-2 text-sm font-medium text-white hover:bg-muted-foreground"
+        className="inline-flex shrink-0 items-center gap-2 rounded-md bg-foreground px-6 py-2 text-sm font-medium text-white hover:bg-muted-foreground"
       >
         <NotebookPen className="h-4 w-4" aria-hidden="true" />
         Write a post

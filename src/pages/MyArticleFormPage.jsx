@@ -201,7 +201,7 @@ function MyArticleFormPage() {
                 type="button"
                 onClick={() => handleSubmit('pending')}
                 disabled={submitting || uploading}
-                className="rounded-full bg-foreground px-8 py-2 text-sm font-medium text-white hover:bg-muted-foreground disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-md bg-foreground px-8 py-2 text-sm font-medium text-white hover:bg-muted-foreground disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {submitting ? 'Sending...' : 'Submit for review'}
               </button>
@@ -209,14 +209,14 @@ function MyArticleFormPage() {
                 type="button"
                 onClick={() => handleSubmit('draft')}
                 disabled={submitting || uploading}
-                className="rounded-full border border-foreground px-8 py-2 text-sm font-medium hover:border-muted-foreground hover:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-md border border-foreground px-8 py-2 text-sm font-medium hover:border-muted-foreground hover:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Save as draft
               </button>
               <button
                 type="button"
                 onClick={() => navigate(-1)}
-                className="rounded-full border border-foreground px-8 py-2 text-sm font-medium hover:border-muted-foreground hover:text-muted-foreground"
+                className="rounded-md border border-foreground px-8 py-2 text-sm font-medium hover:border-muted-foreground hover:text-muted-foreground"
               >
                 Cancel
               </button>
