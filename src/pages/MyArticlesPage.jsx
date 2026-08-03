@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import ConfirmDialog from '../components/ConfirmDialog'
+import LoadingSpinner from '../components/LoadingSpinner'
 import { getStatusMeta } from '../utils/postStatus'
 import { deleteMyArticle, getMyArticles } from '../services/memberArticleService'
 
@@ -101,9 +102,7 @@ function MyArticlesPage() {
           </div>
         )}
 
-        {loading && (
-          <p className="py-16 text-center text-muted-foreground">Loading your posts...</p>
-        )}
+        {loading && <LoadingSpinner />}
 
         {!loading && articles.length === 0 && (
           <div className="rounded-sm border border-border py-16 text-center">

@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import ConfirmDialog from '../components/ConfirmDialog'
+import LoadingSpinner from '../components/LoadingSpinner'
 import ArticleForm from '../components/ArticleForm'
 import {
   emptyArticleForm,
@@ -178,7 +179,7 @@ function MyArticleFormPage() {
         )}
 
         {loading ? (
-          <p className="py-16 text-center text-muted-foreground">Loading...</p>
+          <LoadingSpinner />
         ) : (
           <form className="max-w-[760px]" onSubmit={(event) => event.preventDefault()}>
             <ArticleForm

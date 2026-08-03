@@ -95,7 +95,7 @@ function AdminContentModerationPage() {
       </p>
 
       {loading && (
-        <p className="py-16 text-center text-muted-foreground">Loading review queue...</p>
+        <p className="py-10 text-center text-muted-foreground">Loading review queue...</p>
       )}
 
       {!loading && articles.length === 0 && (
