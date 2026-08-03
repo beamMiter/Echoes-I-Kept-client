@@ -20,6 +20,9 @@ export async function createAdminArticle(form, status) {
       title: form.title,
       description: form.description,
       content: form.content,
+      artist: form.artist,
+      bestPick: form.bestPick,
+      spotifyUrl: form.spotifyUrl || null,
       status,
     })
     return data.data
@@ -36,6 +39,9 @@ export async function updateAdminArticle(article, form, status) {
       title: form.title,
       description: form.description,
       content: form.content,
+      artist: form.artist,
+      bestPick: form.bestPick,
+      spotifyUrl: form.spotifyUrl || null,
       status,
     })
     return data.data

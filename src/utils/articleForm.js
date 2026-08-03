@@ -4,6 +4,9 @@ export const emptyArticleForm = {
   image: '',
   description: '',
   content: '',
+  artist: '',
+  bestPick: '',
+  spotifyUrl: '',
 }
 
 export function getArticleForm(article) {
@@ -15,6 +18,9 @@ export function getArticleForm(article) {
     image: article.image,
     description: article.description,
     content: article.content,
+    artist: article.artist || '',
+    bestPick: article.bestPick || '',
+    spotifyUrl: article.spotifyUrl || '',
   }
 }
 
@@ -26,6 +32,8 @@ export function validateArticleForm(form) {
   if (!form.image.trim()) errors.image = 'Thumbnail image is required.'
   if (!form.description.trim()) errors.description = 'Introduction is required.'
   if (!form.content.trim()) errors.content = 'Content is required.'
+  if (!form.artist.trim()) errors.artist = 'Artist is required.'
+  if (!form.bestPick.trim()) errors.bestPick = 'Best pick (song title) is required.'
 
   return errors
 }

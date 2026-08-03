@@ -75,6 +75,47 @@ function ArticleForm({
       </label>
 
       <label className="flex flex-col gap-2">
+        <span className="text-sm font-medium text-muted-foreground">Artist</span>
+        <input
+          value={form.artist}
+          onChange={(event) => onChange('artist', event.target.value)}
+          className="h-10 w-[360px] max-w-full rounded-sm border border-input bg-background px-3 text-sm focus-visible:border-muted-foreground focus-visible:outline-none"
+          placeholder="e.g. Billie Eilish"
+        />
+        {errors.artist && <span className="text-xs text-red-500">{errors.artist}</span>}
+      </label>
+
+      <label className="flex flex-col gap-2">
+        <span className="text-sm font-medium text-muted-foreground">
+          Best pick (song title)
+        </span>
+        <input
+          value={form.bestPick}
+          onChange={(event) => onChange('bestPick', event.target.value)}
+          className="h-10 w-[360px] max-w-full rounded-sm border border-input bg-background px-3 text-sm focus-visible:border-muted-foreground focus-visible:outline-none"
+          placeholder="The one song you keep coming back to"
+        />
+        {errors.bestPick && (
+          <span className="text-xs text-red-500">{errors.bestPick}</span>
+        )}
+      </label>
+
+      <label className="flex flex-col gap-2">
+        <span className="text-sm font-medium text-muted-foreground">
+          Spotify URL (optional)
+        </span>
+        <input
+          value={form.spotifyUrl}
+          onChange={(event) => onChange('spotifyUrl', event.target.value)}
+          className="h-10 w-full rounded-sm border border-input bg-background px-3 text-sm focus-visible:border-muted-foreground focus-visible:outline-none"
+          placeholder="https://open.spotify.com/track/..."
+        />
+        {errors.spotifyUrl && (
+          <span className="text-xs text-red-500">{errors.spotifyUrl}</span>
+        )}
+      </label>
+
+      <label className="flex flex-col gap-2">
         <span className="text-sm font-medium text-muted-foreground">
           Author name
         </span>

@@ -32,6 +32,9 @@ export async function submitArticle(form) {
       title: form.title,
       description: form.description,
       content: form.content,
+      artist: form.artist,
+      bestPick: form.bestPick,
+      spotifyUrl: form.spotifyUrl || null,
     })
     return data.data
   } catch (error) {
@@ -47,6 +50,9 @@ export async function updateMyArticle(id, form) {
       title: form.title,
       description: form.description,
       content: form.content,
+      artist: form.artist,
+      bestPick: form.bestPick,
+      spotifyUrl: form.spotifyUrl || null,
       // updatePostSchema requires a status, but the server overrides it to
       // 'pending' for non-admins regardless of what's sent.
       status: 'pending',
