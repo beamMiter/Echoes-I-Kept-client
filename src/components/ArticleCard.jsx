@@ -9,7 +9,7 @@ function ArticleCard({
   title,
   description,
   author,
-  authorAvatar = "/avatars/anime.jpg",
+  authorAvatar,
   date,
 }) {
   const postPath = `/post/${id}`;
@@ -61,7 +61,7 @@ function ArticleCard({
         <div className="flex items-center gap-2 pt-1 text-[13px] font-medium text-muted-foreground">
           <img
             className="h-8 w-8 rounded-full object-cover"
-            src={authorAvatar}
+            src={authorAvatar || "/avatars/anime.jpg"}
             alt={author || "Author"}
           />
           <span className="text-foreground">{author || "Unknown author"}</span>
