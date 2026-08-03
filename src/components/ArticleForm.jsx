@@ -22,13 +22,13 @@ function ArticleForm({
         <p className="mb-3 text-sm font-medium text-muted-foreground">
           Thumbnail image
         </p>
-        <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
-          <div className="flex min-h-[180px] w-[360px] max-w-full items-center justify-center overflow-hidden rounded-md bg-[#EFEEEB]">
+        <div className="flex flex-col gap-4">
+          <div className="flex aspect-[1.65/1] w-full max-w-[500px] items-center justify-center overflow-hidden rounded-md bg-[#EFEEEB]">
             {form.image ? (
               <img
                 src={form.image}
                 alt="Thumbnail preview"
-                className="max-h-[360px] w-full object-contain"
+                className="h-full w-full object-cover"
               />
             ) : (
               <Image className="h-8 w-8 text-muted-foreground" />
