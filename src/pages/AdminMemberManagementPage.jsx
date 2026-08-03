@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   ChevronDown,
   Pencil,
@@ -8,6 +8,7 @@ import {
   UserRound,
   X,
 } from 'lucide-react'
+import { toast } from 'sonner'
 import AdminLayout from '../components/AdminLayout'
 import {
   createAdminMember,
@@ -51,7 +52,9 @@ function getMemberForm(member) {
 
 function AdminMemberManagementPage() {
   const { state } = useAuth()
-  const [members, setMembers] = useState(() => getAdminMembers())
+  const [members, setMembers] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
   const [view, setView] = useState('list')
   const [form, setForm] = useState(emptyForm)
   const [editingId, setEditingId] = useState(null)
@@ -59,8 +62,26 @@ function AdminMemberManagementPage() {
   const [apiError, setApiError] = useState('')
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState('all')
-  const [toast, setToast] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
+
+  useEffect(() => {
+    let cancelled = false
+
+    getAdminMembers()
+      .then((data) => {
+        if (!cancelled) setMembers(data)
+      })
+      .catch((error) => {
+        if (!cancelled) setApiError(getErrorMessage(error, 'Unable to load members.'))
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const editingMember = useMemo(
     () => members.find((member) => member.id === editingId),
@@ -125,8 +146,8 @@ function AdminMemberManagementPage() {
     return Object.keys(next).length === 0
   }
 
-  const refreshMembers = () => {
-    setMembers(getAdminMembers())
+  const refreshMembers = async () => {
+    setMembers(await getAdminMembers())
   }
 
   const closeForm = () => {
@@ -153,46 +174,49 @@ function AdminMemberManagementPage() {
     setView('form')
   }
 
-  const submitMember = () => {
+  const submitMember = async () => {
     if (!validate()) return
 
+    setSubmitting(true)
     try {
       if (editingMember) {
-        updateAdminMember(editingMember.id, form)
-        setToast({
-          title: 'Member updated',
-          message: 'Member profile has been successfully saved',
+        await updateAdminMember(editingMember.id, form)
+        toast.success('Member updated', {
+          description: 'Member profile has been successfully saved',
         })
       } else {
-        createAdminMember(form)
-        setToast({
-          title: 'Member created',
-          message: 'New member has been successfully created',
+        await createAdminMember(form)
+        toast.success('Member created', {
+          description: 'New member has been successfully created',
         })
       }
 
-      refreshMembers()
+      await refreshMembers()
       closeForm()
     } catch (error) {
       setApiError(getErrorMessage(error, 'Unable to save member.'))
+    } finally {
+      setSubmitting(false)
     }
   }
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (!deleteTarget) return
 
+    setSubmitting(true)
     try {
-      deleteAdminMember(deleteTarget.id)
-      refreshMembers()
+      await deleteAdminMember(deleteTarget.id)
+      await refreshMembers()
       if (editingId === deleteTarget.id) closeForm()
       setDeleteTarget(null)
-      setToast({
-        title: 'Member deleted',
-        message: 'Member account has been deleted',
+      toast.success('Member deleted', {
+        description: 'Member account has been deleted',
       })
     } catch (error) {
       setApiError(getErrorMessage(error, 'Unable to delete member.'))
       setDeleteTarget(null)
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -214,9 +238,10 @@ function AdminMemberManagementPage() {
             <button
               type="button"
               onClick={submitMember}
-              className="rounded-full bg-foreground px-8 py-2 text-sm font-medium text-white hover:bg-muted-foreground"
+              disabled={submitting}
+              className="rounded-full bg-foreground px-8 py-2 text-sm font-medium text-white hover:bg-muted-foreground disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Save
+              {submitting ? 'Saving...' : 'Save'}
             </button>
           </>
         }
@@ -365,6 +390,7 @@ function AdminMemberManagementPage() {
             member={deleteTarget}
             onCancel={() => setDeleteTarget(null)}
             onDelete={confirmDelete}
+            submitting={submitting}
           />
         )}
       </AdminLayout>
@@ -515,18 +541,14 @@ function AdminMemberManagementPage() {
         </div>
       </div>
 
-      {filteredMembers.length === 0 && (
+      {loading && (
+        <p className="py-10 text-center text-muted-foreground">Loading members...</p>
+      )}
+
+      {!loading && filteredMembers.length === 0 && (
         <p className="py-10 text-center text-muted-foreground">
           No members match this filter.
         </p>
-      )}
-
-      {toast && (
-        <Toast
-          message={toast.message}
-          onClose={() => setToast(null)}
-          title={toast.title}
-        />
       )}
 
       {deleteTarget && (
@@ -534,6 +556,7 @@ function AdminMemberManagementPage() {
           member={deleteTarget}
           onCancel={() => setDeleteTarget(null)}
           onDelete={confirmDelete}
+          submitting={submitting}
         />
       )}
     </AdminLayout>
@@ -549,26 +572,7 @@ function SummaryStat({ label, value }) {
   )
 }
 
-function Toast({ message, onClose, title }) {
-  return (
-    <div className="fixed bottom-10 right-10 z-50 flex w-[520px] max-w-[calc(100vw-40px)] items-start justify-between rounded-sm bg-green-500 px-5 py-4 text-white shadow-lg">
-      <div>
-        <p className="text-base font-bold">{title}</p>
-        <p className="mt-1 text-xs">{message}</p>
-      </div>
-      <button
-        type="button"
-        onClick={onClose}
-        className="rounded-full p-1 hover:bg-white/10"
-        aria-label="Close notification"
-      >
-        <X className="h-4 w-4" />
-      </button>
-    </div>
-  )
-}
-
-function DeleteMemberDialog({ member, onCancel, onDelete }) {
+function DeleteMemberDialog({ member, onCancel, onDelete, submitting }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
       <div className="relative w-full max-w-[360px] rounded-md bg-background px-10 py-8 text-center shadow-lg">
@@ -595,9 +599,10 @@ function DeleteMemberDialog({ member, onCancel, onDelete }) {
           <button
             type="button"
             onClick={onDelete}
-            className="rounded-full bg-foreground px-6 py-2 text-sm font-medium text-white hover:bg-muted-foreground"
+            disabled={submitting}
+            className="rounded-full bg-foreground px-6 py-2 text-sm font-medium text-white hover:bg-muted-foreground disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Delete
+            {submitting ? 'Deleting...' : 'Delete'}
           </button>
         </div>
       </div>

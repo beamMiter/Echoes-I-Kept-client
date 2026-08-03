@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { KeyRound, User } from 'lucide-react'
+import { KeyRound, NotebookTabs, User } from 'lucide-react'
 import Navbar from './Navbar'
 import Footer from './Footer'
 import AdminLayout from './AdminLayout'
@@ -23,6 +23,17 @@ function AccountLayout({ activePage, children, layout = 'default', title }) {
       label: 'Reset password',
       path: resetPasswordPath,
       value: 'reset-password',
+    },
+    // Shown for every role — the admin panel is a separate management tool,
+    // not a replacement for this. Note: when this layout renders inside
+    // AdminLayout on /admin/* paths, clicking this takes an admin out of the
+    // admin chrome and onto the regular /my-posts page, which is expected —
+    // they're switching into the same experience a regular member gets.
+    {
+      icon: NotebookTabs,
+      label: 'My posts',
+      path: '/my-posts',
+      value: 'my-posts',
     },
   ]
 

@@ -13,6 +13,9 @@ import AdminArticleManagementPage from "./pages/AdminArticleManagementPage";
 import AdminCategoryManagementPage from "./pages/AdminCategoryManagementPage";
 import AdminMemberManagementPage from "./pages/AdminMemberManagementPage";
 import AdminNotificationPage from "./pages/AdminNotificationPage";
+import AdminContentModerationPage from "./pages/AdminContentModerationPage";
+import MyArticlesPage from "./pages/MyArticlesPage";
+import MyArticleFormPage from "./pages/MyArticleFormPage";
 import ProfilePage from "./pages/ProfilePage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import NotFoundPage from "./pages/NotFoundPage";
@@ -100,6 +103,38 @@ function App() {
               <AdminRoute>
                 <ResetPasswordPage />
               </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/content-moderation"
+            element={
+              <AdminRoute>
+                <AdminContentModerationPage />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/my-posts"
+            element={
+              <ProtectedRoute>
+                <MyArticlesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/my-posts/new"
+            element={
+              <ProtectedRoute>
+                <MyArticleFormPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/my-posts/:postId/edit"
+            element={
+              <ProtectedRoute>
+                <MyArticleFormPage />
+              </ProtectedRoute>
             }
           />
           <Route
