@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
@@ -141,28 +142,34 @@ function MyArticleFormPage() {
       <Navbar />
       <main className="mx-auto w-full max-w-[900px] flex-1 px-4 py-10 sm:px-6 md:py-14">
         <div className="mb-8">
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="mb-4 text-sm text-muted-foreground hover:text-foreground"
-          >
-            ← Back
-          </button>
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl font-bold md:text-3xl">
-              {isEditing ? 'Edit post' : 'Write a post'}
-            </h1>
-            {statusMeta && (
-              <span
-                className={`inline-flex items-center gap-1.5 text-[12px] font-medium leading-none ${statusMeta.className}`}
-              >
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-2xl font-bold md:text-3xl">
+                {isEditing ? 'Edit post' : 'Write a post'}
+              </h1>
+              {statusMeta && (
                 <span
-                  className={`h-1 w-1 rounded-full ${statusMeta.dotClassName}`}
-                  aria-hidden="true"
-                />
-                {statusMeta.label}
-              </span>
-            )}
+                  className={`inline-flex items-center gap-1.5 text-[12px] font-medium leading-none ${statusMeta.className}`}
+                >
+                  <span
+                    className={`h-1 w-1 rounded-full ${statusMeta.dotClassName}`}
+                    aria-hidden="true"
+                  />
+                  {statusMeta.label}
+                </span>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              className="group inline-flex shrink-0 items-center gap-1.5 rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-[#EFEEEB] hover:text-foreground"
+            >
+              <ArrowLeft
+                className="h-4 w-4 transition-transform duration-200 ease-out group-hover:-translate-x-1"
+                aria-hidden="true"
+              />
+              Back
+            </button>
           </div>
           <p className="mt-2 text-sm text-muted-foreground">
             Posts are reviewed by an admin before they appear on the site.
