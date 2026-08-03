@@ -6,6 +6,7 @@ import {
   getNotifications,
   markAllNotificationsAsRead,
   markNotificationAsRead,
+  subscribeToNotifications,
 } from '../services/notificationService'
 
 function formatNotificationDate(value) {
@@ -72,7 +73,9 @@ function NotificationBell({ compact = false, onNavigate }) {
   const { state } = useAuth()
   const containerRef = useRef(null)
   const [open, setOpen] = useState(false)
-  const [notifications, setNotifications] = useState([])
+  const [notifications, setNotifications] = useState(() =>
+    getNotifications(state.user),
+  )
   const isAdmin = state.user?.role === 'admin'
 
   const unreadNotifications = useMemo(
@@ -82,22 +85,10 @@ function NotificationBell({ compact = false, onNavigate }) {
   )
   const previewNotifications = unreadNotifications.slice(0, 4)
 
-  useEffect(() => {
-    let cancelled = false
-    const fetchNotifications = state.user ? getNotifications() : Promise.resolve([])
-
-    fetchNotifications
-      .then((data) => {
-        if (!cancelled) setNotifications(data)
-      })
-      .catch(() => {
-        if (!cancelled) setNotifications([])
-      })
-
-    return () => {
-      cancelled = true
-    }
-  }, [state.user])
+  useEffect(
+    () => subscribeToNotifications(state.user, setNotifications),
+    [state.user],
+  )
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -114,35 +105,14 @@ function NotificationBell({ compact = false, onNavigate }) {
   }, [])
 
   const openArticle = (notification) => {
+    setNotifications(markNotificationAsRead(state.user, notification.id))
     setOpen(false)
     onNavigate?.()
-    // A rejected post isn't public, so there's nothing to show at /post/:id —
-    // send the author to their own list instead, where the reason is shown.
-    if (notification.type === 'post_rejected' || !notification.articleId) {
-      navigate('/my-posts')
-    } else {
-      navigate(`/post/${notification.articleId}`)
-    }
-
-    markNotificationAsRead(notification.id)
-      .then(() => {
-        setNotifications((prev) =>
-          prev.map((item) =>
-            item.id === notification.id ? { ...item, status: 'read' } : item,
-          ),
-        )
-      })
-      .catch(() => {})
+    navigate(`/post/${notification.articleId}`)
   }
 
   const markAllAsRead = () => {
-    markAllNotificationsAsRead()
-      .then(() => {
-        setNotifications((prev) =>
-          prev.map((item) => ({ ...item, status: 'read' })),
-        )
-      })
-      .catch(() => {})
+    setNotifications(markAllNotificationsAsRead(state.user))
   }
 
   const openAdminNotifications = () => {

@@ -1,6 +1,5 @@
 import Navbar from "../components/Navbar";
 import HeroSection from "../components/HeroSection";
-import WriteCta from "../components/WriteCta";
 import LatestArticles from "../components/LatestArticles";
 import Footer from "../components/Footer";
 
@@ -15,7 +14,7 @@ function HomePage() {
       <Navbar />
       <div className="flex-grow">
         <HeroSection />
-        <LatestArticles ctaSlot={<WriteCta />} />
+        <LatestArticles />
       </div>
       <Footer />
     </div>

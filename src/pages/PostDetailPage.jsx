@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { useParams } from "react-router-dom";
-import { FileQuestion } from "lucide-react";
+import { FileQuestion, Loader2 } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import LoadingSpinner from "../components/LoadingSpinner";
 import AuthorSidebar from "../components/AuthorSidebar";
 import ArticleLikeShare from "../components/ArticleLikeShare";
 import ArticleComments from "../components/ArticleComments";
@@ -16,6 +15,10 @@ import {
   getPostHeroImage,
   getPostHeroImagePosition,
 } from "../data/mockPosts";
+import {
+  getPublishedAdminArticleById,
+  hasAdminArticleStore,
+} from "../services/articleAdminService";
 import { fetchPublishedPostById } from "../services/postsService";
 import { useAuth } from "../context/useAuth";
 import { getCategoryTextStyles } from "../utils/categoryStyles";
@@ -57,6 +60,10 @@ function PostDetailBody({ postId, detailImageSource }) {
     let cancelled = false;
 
     const resolvePost = () => {
+      if (hasAdminArticleStore()) {
+        return Promise.resolve(getPublishedAdminArticleById(postId));
+      }
+
       return fetchPublishedPostById(postId).catch(() => detailImageSource);
     };
 
@@ -74,7 +81,7 @@ function PostDetailBody({ postId, detailImageSource }) {
   if (loading) {
     return (
       <main className="flex flex-grow items-center justify-center px-4">
-        <LoadingSpinner padded={false} />
+        <Loader2 className="h-6 w-6 animate-spin text-[#7A746E]" aria-hidden="true" />
       </main>
     );
   }

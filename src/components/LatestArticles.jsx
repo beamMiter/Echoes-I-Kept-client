@@ -3,18 +3,19 @@ import { useNavigate } from "react-router-dom";
 import { ChevronDown, Loader2, Search, SearchX, X } from "lucide-react";
 import ArticleCard from "./ArticleCard";
 import ArticleCardSkeleton from "./ui/ArticleCardSkeleton";
+import { mockCategories, searchMockPosts } from "../data/mockPosts";
 import {
-  getMockPostsByCategory,
-  mockCategories,
-  searchMockPosts,
-} from "../data/mockPosts";
+  getPublishedAdminArticlesByCategory,
+  hasAdminArticleStore,
+  searchPublishedAdminArticles,
+} from "../services/articleAdminService";
 import { fetchPublishedPosts } from "../services/postsService";
 import { fetchCategories } from "../services/categoriesService";
 
 const PAGE_SIZE = 6;
 const SEARCH_MAX_LENGTH = 80;
 
-function LatestArticles({ ctaSlot }) {
+function LatestArticles() {
   const navigate = useNavigate();
 
   const tabRefs = useRef({});
@@ -55,9 +56,9 @@ function LatestArticles({ ctaSlot }) {
     let cancelled = false;
 
     const fetchPosts = () => {
-      if (useMockData) {
+      if (useMockData || hasAdminArticleStore()) {
         return Promise.resolve(
-          getMockPostsByCategory(selectedCategory, page, PAGE_SIZE),
+          getPublishedAdminArticlesByCategory(selectedCategory, page, PAGE_SIZE),
         );
       }
 
@@ -67,7 +68,11 @@ function LatestArticles({ ctaSlot }) {
         category: selectedCategory,
       }).catch(() => {
         setUseMockData(true);
-        return getMockPostsByCategory(selectedCategory, page, PAGE_SIZE);
+        return getPublishedAdminArticlesByCategory(
+          selectedCategory,
+          page,
+          PAGE_SIZE,
+        );
       });
     };
 
@@ -95,8 +100,12 @@ function LatestArticles({ ctaSlot }) {
     let cancelled = false;
 
     const runSearch = () => {
-      if (useMockData) {
-        return Promise.resolve(searchMockPosts(trimmed));
+      if (useMockData || hasAdminArticleStore()) {
+        return Promise.resolve(
+          hasAdminArticleStore()
+            ? searchPublishedAdminArticles(trimmed)
+            : searchMockPosts(trimmed),
+        );
       }
 
       return fetchPublishedPosts({ search: trimmed, limit: 10 })
@@ -164,7 +173,6 @@ function LatestArticles({ ctaSlot }) {
   return (
     <section className="mx-auto mb-20 w-full max-w-[1040px] px-4 sm:px-6 lg:px-0">
       <div className="mb-10 rounded-[4px] bg-[#EFEEEB] px-4 py-3">
-        {ctaSlot}
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-6">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-5">
             <h2 className="text-xl font-display leading-none text-[#171717] font-medium md:border-r md:border-[#D7D3CE] md:pr-5">

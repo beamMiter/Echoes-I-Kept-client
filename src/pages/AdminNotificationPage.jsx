@@ -5,6 +5,7 @@ import { useAuth } from '../context/useAuth'
 import {
   getNotifications,
   markNotificationAsRead,
+  subscribeToNotifications,
 } from '../services/notificationService'
 
 function formatRelativeTime(value) {
@@ -27,28 +28,14 @@ function formatRelativeTime(value) {
 function AdminNotificationPage() {
   const navigate = useNavigate()
   const { state } = useAuth()
-  const [notifications, setNotifications] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [notifications, setNotifications] = useState(() =>
+    getNotifications(state.user),
+  )
 
-  useEffect(() => {
-    let cancelled = false
-    const fetchNotifications = state.user ? getNotifications() : Promise.resolve([])
-
-    fetchNotifications
-      .then((data) => {
-        if (!cancelled) setNotifications(data)
-      })
-      .catch(() => {
-        if (!cancelled) setNotifications([])
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false)
-      })
-
-    return () => {
-      cancelled = true
-    }
-  }, [state.user])
+  useEffect(
+    () => subscribeToNotifications(state.user, setNotifications),
+    [state.user],
+  )
 
   const unreadNotifications = useMemo(
     () =>
@@ -57,25 +44,14 @@ function AdminNotificationPage() {
   )
 
   const viewNotification = (notification) => {
+    setNotifications(markNotificationAsRead(state.user, notification.id))
     navigate(`/post/${notification.articleId}`)
-
-    markNotificationAsRead(notification.id)
-      .then(() => {
-        setNotifications((prev) =>
-          prev.map((item) =>
-            item.id === notification.id ? { ...item, status: 'read' } : item,
-          ),
-        )
-      })
-      .catch(() => {})
   }
 
   return (
     <AdminLayout title="Notification">
       <div className="w-full">
-        {loading ? (
-          <p className="py-10 text-muted-foreground">Loading notifications...</p>
-        ) : unreadNotifications.length > 0 ? (
+        {unreadNotifications.length > 0 ? (
           <div className="divide-y divide-border">
             {unreadNotifications.map((notification) => (
               <article
