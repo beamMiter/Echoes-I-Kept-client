@@ -40,6 +40,7 @@ function MyArticleFormPage() {
   const [errors, setErrors] = useState({})
   const [apiError, setApiError] = useState('')
   const [confirmingUnpublish, setConfirmingUnpublish] = useState(false)
+  const [pendingStatus, setPendingStatus] = useState(null)
 
   useEffect(() => {
     let cancelled = false
@@ -91,28 +92,22 @@ function MyArticleFormPage() {
     }
   }
 
-  const save = async () => {
+  const save = async (status) => {
     setSubmitting(true)
     setApiError('')
     try {
       if (isEditing) {
-        await updateMyArticle(postId, form, existing?.status)
-        // A non-admin author's edit always goes back to pending, whatever
-        // status the post had before. An admin editing their own post here
-        // keeps its current status — they don't need "sent for review"
-        // wording for something that, say, stayed published.
-        if (state.user?.role === 'admin') {
-          toast.success('Saved', {
-            description: 'Your changes have been saved.',
-          })
-        } else {
-          toast.success('Sent for review', {
-            description: 'Your changes will be published once an admin approves them.',
-          })
-        }
+        await updateMyArticle(postId, form, status)
       } else {
-        await submitArticle(form)
-        toast.success('Submitted for review', {
+        await submitArticle(form, status)
+      }
+
+      if (status === 'draft') {
+        toast.success('Saved as draft', {
+          description: 'Come back and submit it whenever you’re ready.',
+        })
+      } else {
+        toast.success(isEditing ? 'Sent for review' : 'Submitted for review', {
           description: 'Your post will go live once an admin approves it.',
         })
       }
@@ -125,20 +120,18 @@ function MyArticleFormPage() {
     }
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = (status) => {
     const nextErrors = validateArticleForm(form)
     setErrors(nextErrors)
     if (Object.keys(nextErrors).length > 0) return
 
-    // Editing a live post takes it off the site until it's re-approved —
-    // but only for a non-admin author. An admin's edit keeps the post
-    // published, so there's nothing to warn them about.
-    if (existing?.status === 'published' && state.user?.role !== 'admin') {
+    if (existing?.status === 'published') {
+      setPendingStatus(status)
       setConfirmingUnpublish(true)
       return
     }
 
-    save()
+    save(status)
   }
 
   const statusMeta = existing ? getStatusMeta(existing.status) : null
@@ -206,11 +199,19 @@ function MyArticleFormPage() {
             <div className="mt-8 flex flex-wrap gap-3">
               <button
                 type="button"
-                onClick={handleSubmit}
+                onClick={() => handleSubmit('pending')}
                 disabled={submitting || uploading}
                 className="rounded-full bg-foreground px-8 py-2 text-sm font-medium text-white hover:bg-muted-foreground disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {submitting ? 'Sending...' : 'Submit for review'}
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSubmit('draft')}
+                disabled={submitting || uploading}
+                className="rounded-full border border-foreground px-8 py-2 text-sm font-medium hover:border-muted-foreground hover:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Save as draft
               </button>
               <button
                 type="button"
@@ -227,13 +228,17 @@ function MyArticleFormPage() {
 
       {confirmingUnpublish && (
         <ConfirmDialog
-          title="Send back for review?"
-          message="This post is currently live. Saving your changes takes it off the site until an admin approves the new version."
-          confirmLabel="Save and resubmit"
+          title={pendingStatus === 'draft' ? 'Save as draft?' : 'Send back for review?'}
+          message={
+            pendingStatus === 'draft'
+              ? 'This post is currently live. Saving it as a draft takes it off the site until you submit and it’s approved again.'
+              : 'This post is currently live. Saving your changes takes it off the site until an admin approves the new version.'
+          }
+          confirmLabel={pendingStatus === 'draft' ? 'Save as draft' : 'Save and resubmit'}
           pendingLabel="Sending..."
           submitting={submitting}
           onCancel={() => setConfirmingUnpublish(false)}
-          onConfirm={save}
+          onConfirm={() => save(pendingStatus)}
         />
       )}
     </div>

@@ -2,10 +2,10 @@ import { apiClient } from './apiClient'
 import { normalizeApiError } from './apiError'
 
 // A member's own posts (also reachable by admins, who get more freedom
-// server-side — see the moderation section in the server's CLAUDE.md).
-// Every post starts pending on create, whoever creates it; the server
-// forces edits by a non-admin back to pending too, regardless of what's
-// sent — see updateMyArticle for the one case that does matter.
+// server-side — see the moderation section in the server's CLAUDE.md). A
+// non-admin can only ever save as 'draft' or submit as 'pending' — the
+// server ignores any other status they send. An admin's status is trusted
+// as-is.
 export async function getMyArticles() {
   try {
     const { data } = await apiClient.get('/api/posts', {
@@ -26,7 +26,13 @@ export async function getMyArticleById(id) {
   }
 }
 
-export async function submitArticle(form) {
+// `status` here is whatever the caller decided should happen — for a
+// non-admin it's their explicit draft-or-submit choice (the server allows
+// exactly those two for a non-admin and forces anything else to 'pending');
+// for an admin using this simpler member-style form, the caller passes
+// their post's current status to leave it unchanged, since this form has
+// no full status control the way the admin editor does.
+export async function submitArticle(form, status = 'pending') {
   try {
     const { data } = await apiClient.post('/api/posts', {
       category: form.category,
@@ -37,6 +43,7 @@ export async function submitArticle(form) {
       artist: form.artist,
       bestPick: form.bestPick,
       spotifyUrl: form.spotifyUrl || null,
+      status,
     })
     return data.data
   } catch (error) {
@@ -44,17 +51,7 @@ export async function submitArticle(form) {
   }
 }
 
-// `currentStatus` is the post's status before this edit. For a non-admin
-// author this is irrelevant — the server always forces the post back to
-// 'pending' on any edit, regardless of what's sent. But this same function
-// is also reachable by an admin editing their own post through this simpler
-// member-style form (as opposed to the admin editor, which has an explicit
-// status control) — for them the server trusts the payload's status as-is,
-// so sending a hardcoded 'pending' here would silently revert their post's
-// status on every save. Passing the post's current status keeps this a
-// no-op for admins using this form, while still doing nothing different for
-// members (whose value gets overridden either way).
-export async function updateMyArticle(id, form, currentStatus) {
+export async function updateMyArticle(id, form, status) {
   try {
     const { data } = await apiClient.put(`/api/posts/${id}`, {
       category: form.category,
@@ -65,7 +62,7 @@ export async function updateMyArticle(id, form, currentStatus) {
       artist: form.artist,
       bestPick: form.bestPick,
       spotifyUrl: form.spotifyUrl || null,
-      status: currentStatus || 'pending',
+      status: status || 'pending',
     })
     return data.data
   } catch (error) {
