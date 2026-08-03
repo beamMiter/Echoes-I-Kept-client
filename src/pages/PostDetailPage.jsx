@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { useParams } from "react-router-dom";
-import { FileQuestion, Loader2 } from "lucide-react";
+import { FileQuestion } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import LoadingSpinner from "../components/LoadingSpinner";
 import AuthorSidebar from "../components/AuthorSidebar";
 import ArticleLikeShare from "../components/ArticleLikeShare";
 import ArticleComments from "../components/ArticleComments";
@@ -73,7 +74,7 @@ function PostDetailBody({ postId, detailImageSource }) {
   if (loading) {
     return (
       <main className="flex flex-grow items-center justify-center px-4">
-        <Loader2 className="h-6 w-6 animate-spin text-[#7A746E]" aria-hidden="true" />
+        <LoadingSpinner padded={false} />
       </main>
     );
   }
