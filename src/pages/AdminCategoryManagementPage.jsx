@@ -224,15 +224,29 @@ function AdminCategoryManagementPage() {
           </div>
 
           {editingCategory && (
-            <button
-              type="button"
-              onClick={() => setDeleteTarget(editingCategory)}
-              disabled={Boolean(usageByCategory[editingCategory.name])}
-              className="inline-flex items-center gap-2 text-sm font-medium text-foreground hover:text-red-600 disabled:cursor-not-allowed disabled:text-muted-foreground"
-            >
-              <Trash2 className="h-4 w-4" />
-              Delete category
-            </button>
+            <div>
+              <button
+                type="button"
+                onClick={() => setDeleteTarget(editingCategory)}
+                disabled={Boolean(usageByCategory[editingCategory.name])}
+                title={
+                  usageByCategory[editingCategory.name]
+                    ? `Used by ${usageByCategory[editingCategory.name]} article(s) — reassign them before deleting this category`
+                    : undefined
+                }
+                className="inline-flex items-center gap-2 text-sm font-medium text-foreground hover:text-red-600 disabled:cursor-not-allowed disabled:text-muted-foreground"
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete category
+              </button>
+              {Boolean(usageByCategory[editingCategory.name]) && (
+                <p className="mt-1.5 text-xs text-muted-foreground">
+                  Used by {usageByCategory[editingCategory.name]} article
+                  {usageByCategory[editingCategory.name] === 1 ? '' : 's'} — reassign
+                  them to another category before deleting this one.
+                </p>
+              )}
+            </div>
           )}
         </section>
 
@@ -318,6 +332,11 @@ function AdminCategoryManagementPage() {
                         type="button"
                         onClick={() => setDeleteTarget(category)}
                         disabled={Boolean(usageByCategory[category.name])}
+                        title={
+                          usageByCategory[category.name]
+                            ? `Used by ${usageByCategory[category.name]} article(s) — reassign them before deleting this category`
+                            : undefined
+                        }
                         className="text-muted-foreground hover:text-red-600 disabled:cursor-not-allowed disabled:text-muted-foreground/50"
                         aria-label={`Delete ${category.name}`}
                       >

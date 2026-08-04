@@ -374,15 +374,27 @@ function AdminMemberManagementPage() {
           </div>
 
           {isEditing && (
-            <button
-              type="button"
-              onClick={() => setDeleteTarget(editingMember)}
-              disabled={editingMember.id === state.user?.id}
-              className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-foreground hover:text-red-600 disabled:cursor-not-allowed disabled:text-muted-foreground"
-            >
-              <Trash2 className="h-4 w-4" />
-              Delete member
-            </button>
+            <div>
+              <button
+                type="button"
+                onClick={() => setDeleteTarget(editingMember)}
+                disabled={editingMember.id === state.user?.id}
+                title={
+                  editingMember.id === state.user?.id
+                    ? "You can't delete your own account"
+                    : undefined
+                }
+                className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-foreground hover:text-red-600 disabled:cursor-not-allowed disabled:text-muted-foreground"
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete member
+              </button>
+              {editingMember.id === state.user?.id && (
+                <p className="mt-1.5 text-xs text-muted-foreground">
+                  You can&apos;t delete your own account while logged in as it.
+                </p>
+              )}
+            </div>
           )}
         </section>
 
@@ -527,6 +539,11 @@ function AdminMemberManagementPage() {
                           type="button"
                           onClick={() => setDeleteTarget(member)}
                           disabled={isCurrentUser}
+                          title={
+                            isCurrentUser
+                              ? "You can't delete your own account"
+                              : undefined
+                          }
                           className="text-muted-foreground hover:text-red-600 disabled:cursor-not-allowed disabled:text-muted-foreground/50"
                           aria-label={`Delete ${member.name}`}
                         >
