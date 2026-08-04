@@ -25,11 +25,16 @@ function WriteCta() {
       mm.add('(prefers-reduced-motion: no-preference)', () => {
         // A slow sheen across the button on a long repeat delay, so it reads
         // as an occasional nudge rather than a blinking ad.
+        //
+        // xPercent is a share of the sheen's OWN width (a third of the
+        // button), so a full crossing runs -100 (right edge at the button's
+        // left edge) to 300 (left edge at the button's right edge). The extra
+        // 40 on each end keeps the blurred, skewed edges out of frame.
         gsap.fromTo(
           '[data-cta-sheen]',
-          { xPercent: -160 },
+          { xPercent: -140 },
           {
-            xPercent: 160,
+            xPercent: 340,
             duration: 0.9,
             ease: 'power1.inOut',
             repeat: -1,
@@ -103,7 +108,7 @@ function WriteCta() {
         <span
           data-cta-sheen
           aria-hidden="true"
-          className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 skew-x-[-20deg] bg-white/25 blur-[6px]"
+          className="pointer-events-none absolute inset-y-0 left-0 w-1/3 skew-x-[-20deg] bg-white/25 blur-[6px]"
         />
         <NotebookPen data-cta-icon className="h-4 w-4" aria-hidden="true" />
         Write a post
