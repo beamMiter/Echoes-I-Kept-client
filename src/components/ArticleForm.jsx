@@ -1,14 +1,6 @@
 import { useState } from 'react'
 import ReactMarkdown from 'react-markdown'
-import {
-  Check,
-  ChevronDown,
-  Copy,
-  Eye,
-  Image,
-  ImagePlus,
-  PenLine,
-} from 'lucide-react'
+import { Check, ChevronDown, Copy, Eye, Image, PenLine } from 'lucide-react'
 import FormSection from './FormSection'
 
 // Form state helpers live in ../utils/articleForm — keeping this file to a
@@ -236,13 +228,15 @@ function ArticleForm({
                 // the actual size, not a scaled-down stand-in for it.
                 <img src={contentImageUrl} alt="" className="w-full rounded-md" />
               ) : (
-                <div className="flex h-40 w-full items-center justify-center rounded-md bg-[#EFEEEB]">
+                // Nothing uploaded yet, so there's no "real size" to match —
+                // use the same placeholder shape as the cover image above
+                // instead of an arbitrary full-width bar.
+                <div className="flex aspect-[1.65/1] w-full max-w-[500px] items-center justify-center overflow-hidden rounded-md bg-[#EFEEEB]">
                   <Image className="h-8 w-8 text-muted-foreground" />
                 </div>
               )}
               <div className="flex flex-wrap items-center gap-2">
-                <label className="inline-flex w-fit cursor-pointer items-center gap-1.5 rounded-md border border-foreground px-4 py-2 text-xs font-medium hover:border-muted-foreground hover:text-muted-foreground has-disabled:cursor-not-allowed has-disabled:opacity-60">
-                  <ImagePlus className="h-3.5 w-3.5" aria-hidden="true" />
+                <label className="inline-flex w-fit cursor-pointer rounded-md border border-foreground px-8 py-2 text-sm font-medium hover:border-muted-foreground hover:text-muted-foreground has-disabled:cursor-not-allowed has-disabled:opacity-60">
                   {uploadingContentImage ? 'Uploading...' : 'Upload image'}
                   <input
                     type="file"
