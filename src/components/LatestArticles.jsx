@@ -1,13 +1,15 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronDown, Loader2, Search, SearchX, X } from "lucide-react";
+import {
+  AlertCircle,
+  ChevronDown,
+  Loader2,
+  Search,
+  SearchX,
+  X,
+} from "lucide-react";
 import ArticleCard from "./ArticleCard";
 import ArticleCardSkeleton from "./ui/ArticleCardSkeleton";
-import {
-  getMockPostsByCategory,
-  mockCategories,
-  searchMockPosts,
-} from "../data/mockPosts";
 import { fetchPublishedPosts } from "../services/postsService";
 import { fetchCategories } from "../services/categoriesService";
 
@@ -28,10 +30,11 @@ function LatestArticles({ ctaSlot }) {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [keyword, setKeyword] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
 
-  const [categories, setCategories] = useState(mockCategories);
+  const [categories, setCategories] = useState([]);
   const displayCategories = categories;
   const categoryKey = displayCategories.map((cat) => cat.name).join("|");
 
@@ -52,15 +55,11 @@ function LatestArticles({ ctaSlot }) {
   useEffect(() => {
     let cancelled = false;
 
-    // Always try the real API for this request first — a past failure
-    // shouldn't permanently pin the whole page to stale seed data. The mock
-    // fallback only covers *this* fetch if *this* fetch fails.
     fetchPublishedPosts({
       page,
       limit: PAGE_SIZE,
       category: selectedCategory,
     })
-      .catch(() => getMockPostsByCategory(selectedCategory, page, PAGE_SIZE))
       .then((result) => {
         if (cancelled) return;
 
@@ -68,6 +67,12 @@ function LatestArticles({ ctaSlot }) {
           page === 1 ? result.posts : [...prev, ...result.posts],
         );
         setHasMore(result.currentPage < result.totalPages);
+        setLoadError(false);
+        setLoading(false);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setLoadError(true);
         setLoading(false);
       });
 
@@ -77,6 +82,7 @@ function LatestArticles({ ctaSlot }) {
   }, [page, selectedCategory]);
 
   const [searchResults, setSearchResults] = useState([]);
+  const [searchError, setSearchError] = useState(false);
 
   useEffect(() => {
     const trimmed = keyword.trim();
@@ -85,10 +91,15 @@ function LatestArticles({ ctaSlot }) {
     let cancelled = false;
 
     fetchPublishedPosts({ search: trimmed, limit: 10 })
-      .then((result) => result.posts)
-      .catch(() => searchMockPosts(trimmed))
-      .then((results) => {
-        if (!cancelled) setSearchResults(results);
+      .then((result) => {
+        if (cancelled) return;
+        setSearchResults(result.posts);
+        setSearchError(false);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setSearchResults([]);
+        setSearchError(true);
       });
 
     return () => {
@@ -292,16 +303,25 @@ function LatestArticles({ ctaSlot }) {
                     </>
                   ) : (
                     <div className="flex items-start gap-3 px-3 py-4">
-                      <SearchX
-                        className="mt-0.5 h-4 w-4 shrink-0 text-[#8F8983]"
-                        aria-hidden="true"
-                      />
+                      {searchError ? (
+                        <AlertCircle
+                          className="mt-0.5 h-4 w-4 shrink-0 text-[#8F8983]"
+                          aria-hidden="true"
+                        />
+                      ) : (
+                        <SearchX
+                          className="mt-0.5 h-4 w-4 shrink-0 text-[#8F8983]"
+                          aria-hidden="true"
+                        />
+                      )}
                       <div>
                         <p className="text-sm font-medium text-[#2B2825]">
-                          No matches found
+                          {searchError ? "Couldn't search" : "No matches found"}
                         </p>
                         <p className="mt-1 text-xs leading-5 text-[#7A746E]">
-                          Try another artist, song, or category.
+                          {searchError
+                            ? "Something went wrong reaching the server."
+                            : "Try another artist, song, or category."}
                         </p>
                       </div>
                     </div>
@@ -340,21 +360,49 @@ function LatestArticles({ ctaSlot }) {
               <ArticleCardSkeleton key={`loading-${i}`} />
             ))}
         </div>
+      ) : loadError && !keyword.trim() ? (
+        <div className="mx-auto flex max-w-sm flex-col items-center py-16 text-center">
+          <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-[#EFEEEB] text-[#7A746E]">
+            <AlertCircle className="h-6 w-6" aria-hidden="true" />
+          </div>
+          <h3 className="font-display text-2xl font-medium text-[#171717]">
+            Couldn&apos;t load articles
+          </h3>
+          <p className="mt-3 text-sm leading-6 text-muted-foreground">
+            Something went wrong reaching the server. Please try again.
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              setLoading(true);
+              setLoadError(false);
+              setPage(1);
+              setPosts([]);
+            }}
+            className="mt-5 text-sm font-medium underline hover:text-muted-foreground"
+          >
+            Retry
+          </button>
+        </div>
       ) : (
         <div className="mx-auto flex max-w-sm flex-col items-center py-16 text-center">
           <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-[#EFEEEB] text-[#7A746E]">
             <SearchX className="h-6 w-6" aria-hidden="true" />
           </div>
           <h3 className="font-display text-2xl font-medium text-[#171717]">
-            No articles found
+            {keyword.trim() && searchError
+              ? "Couldn't search articles"
+              : "No articles found"}
           </h3>
           <p className="mt-3 text-sm leading-6 text-muted-foreground">
-            Try a different keyword or choose another category.
+            {keyword.trim() && searchError
+              ? "Something went wrong reaching the server. Please try again."
+              : "Try a different keyword or choose another category."}
           </p>
         </div>
       )}
 
-      {hasMore && !isInitialLoading && !keyword.trim() && (
+      {hasMore && !isInitialLoading && !loadError && !keyword.trim() && (
         <div className="mt-20 text-center">
           <button
             type="button"

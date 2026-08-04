@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { mockPosts } from "../data/mockPosts";
 import { fetchPublishedPosts } from "../services/postsService";
 import VinylAlbumCarousel from "./VinylAlbumCarousel";
 
@@ -10,24 +9,20 @@ function toHeroTrack({ id, artist, bestPick, image, spotifyUrl }) {
 }
 
 function HeroSection() {
-  // Seeded with the mock data so there's something to show on first paint
-  // instead of an empty carousel while the real posts are still loading.
-  const [heroTracks, setHeroTracks] = useState(() =>
-    mockPosts.map(toHeroTrack),
-  );
+  const [heroTracks, setHeroTracks] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
 
     fetchPublishedPosts({ limit: HERO_TRACK_COUNT })
       .then((result) => {
-        if (cancelled || result.posts.length === 0) return;
+        if (cancelled) return;
         setHeroTracks(result.posts.map(toHeroTrack));
       })
-      .catch(() => {
-        // Real posts failed to load — the mock tracks already seeded above
-        // stay on screen, same offline-fallback pattern as the rest of the
-        // public pages.
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setLoading(false);
       });
 
     return () => {
@@ -62,7 +57,18 @@ function HeroSection() {
         </div>
 
         <div className="mb-10 flex w-full max-w-[520px] justify-center lg:mb-0">
-          <VinylAlbumCarousel tracks={heroTracks} />
+          {heroTracks.length > 0 ? (
+            <VinylAlbumCarousel tracks={heroTracks} />
+          ) : (
+            <div className="relative aspect-[7/5] w-full">
+              <div
+                className={`absolute inset-0 rounded-full bg-[#EFEEEB] ${
+                  loading ? "animate-pulse" : ""
+                }`}
+                aria-hidden="true"
+              />
+            </div>
+          )}
         </div>
 
         <div className="max-w-[380px] border-l-2 border-foreground/15 pl-6 lg:w-full lg:max-w-[340px]">
