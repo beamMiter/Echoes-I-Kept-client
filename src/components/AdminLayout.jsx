@@ -127,7 +127,10 @@ function AdminSidebarContent({ onLinkClick, onLogout }) {
             alt=""
             className="h-10 w-10 shrink-0 opacity-70 transition-opacity duration-300 group-hover:opacity-100"
           />
-          <span className="block text-2xl font-bold leading-tight tracking-tight text-[#FF9950]">
+          {/* font-medium, not font-bold: the public navbar's brand lists both
+              classes and font-medium wins the cascade, so 500 is what actually
+              renders there. */}
+          <span className="block text-2xl font-medium leading-tight tracking-tight text-[#FF9950]">
             Admin panel
           </span>
         </Link>
