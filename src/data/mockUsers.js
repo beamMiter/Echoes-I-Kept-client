@@ -160,7 +160,3 @@ export const mockUsers = [
 export function getMockUserById(userId) {
   return mockUsers.find((user) => user.id === userId) || null
 }
-
-export function getMockUserByName(name) {
-  return mockUsers.find((user) => user.name === name) || null
-}
