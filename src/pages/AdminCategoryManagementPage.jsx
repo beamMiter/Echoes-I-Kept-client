@@ -3,6 +3,7 @@ import { Pencil, Plus, Search, Trash2, X } from 'lucide-react'
 import { toast } from 'sonner'
 import AdminLayout from '../components/AdminLayout'
 import LoadingSpinner from '../components/LoadingSpinner'
+import FormSection from '../components/FormSection'
 import {
   createAdminCategory,
   deleteAdminCategory,
@@ -200,16 +201,10 @@ function AdminCategoryManagementPage() {
             </div>
           )}
 
-          <div className="space-y-4">
-            <div>
-              <h2 className="text-sm font-semibold text-foreground">
-                Category details
-              </h2>
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                Shown as the category tag on articles and in the filter list.
-              </p>
-            </div>
-
+          <FormSection
+            title="Category details"
+            description="Shown as the category tag on articles and in the filter list."
+          >
             <label className="flex flex-col gap-3">
               <span className="text-sm font-medium text-muted-foreground">
                 Category name
@@ -221,7 +216,7 @@ function AdminCategoryManagementPage() {
                 placeholder="Category name"
               />
             </label>
-          </div>
+          </FormSection>
 
           {editingCategory && (
             <div>

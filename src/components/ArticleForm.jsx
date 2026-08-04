@@ -1,24 +1,10 @@
 import { useRef, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import { ChevronDown, Eye, Image, ImagePlus, PenLine } from 'lucide-react'
+import FormSection from './FormSection'
 
 // Form state helpers live in ../utils/articleForm — keeping this file to a
-// single component export is what the react-refresh lint rule requires
-// (FormSection below is a plain internal helper, not exported).
-
-function FormSection({ title, description, children }) {
-  return (
-    <section className="space-y-4">
-      <div>
-        <h2 className="text-sm font-semibold text-foreground">{title}</h2>
-        {description && (
-          <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
-        )}
-      </div>
-      {children}
-    </section>
-  )
-}
+// single component export is what the react-refresh lint rule requires.
 
 // Shared between the admin editor and the member submission form. Deliberately
 // has no status control — neither caller lets the author pick a status, and on
