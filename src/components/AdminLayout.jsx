@@ -117,13 +117,17 @@ function AdminSidebarContent({ onLinkClick, onLogout }) {
   return (
     <>
       <div className="border-b border-[#DAD7D2] px-5 py-5">
-        <Link to="/" onClick={onLinkClick} className="flex items-center gap-2.5">
+        <Link
+          to="/"
+          onClick={onLinkClick}
+          className="group flex items-center gap-2.5"
+        >
           <img
             src="/svg/listening-to-music.svg"
             alt=""
-            className="h-9 w-9 shrink-0"
+            className="h-10 w-10 shrink-0 opacity-70 transition-opacity duration-300 group-hover:opacity-100"
           />
-          <span className="text-lg font-bold leading-tight tracking-tight text-[#FF9950]">
+          <span className="block border-b-2 border-foreground pb-0.5 text-2xl font-bold leading-tight tracking-tight">
             Admin panel
           </span>
         </Link>
