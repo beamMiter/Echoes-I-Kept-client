@@ -198,6 +198,13 @@ body {
   margin-top: 0.35rem;
 }
 
+.markdown img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 1.5rem 0;
+}
+
 [data-sonner-toast].app-toast {
   --normal-bg: hsl(var(--background));
   --normal-border: #d9d8d4;

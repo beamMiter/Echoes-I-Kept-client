@@ -61,7 +61,7 @@ function ArticleComments({ comments = [], onAddComment }) {
           <div className="flex justify-end">
             <button
               type="submit"
-              className="px-8 py-2 bg-foreground text-white rounded-full hover:bg-muted-foreground transition-colors"
+              className="px-8 py-2 bg-foreground text-white rounded-md hover:bg-muted-foreground transition-colors"
             >
               Send
             </button>

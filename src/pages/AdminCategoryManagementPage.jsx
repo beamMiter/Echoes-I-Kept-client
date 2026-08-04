@@ -3,6 +3,7 @@ import { Pencil, Plus, Search, Trash2, X } from 'lucide-react'
 import { toast } from 'sonner'
 import AdminLayout from '../components/AdminLayout'
 import LoadingSpinner from '../components/LoadingSpinner'
+import FormSection from '../components/FormSection'
 import {
   createAdminCategory,
   deleteAdminCategory,
@@ -10,6 +11,7 @@ import {
   updateAdminCategory,
 } from '../services/categoryAdminService'
 import { getAdminArticles } from '../services/articleAdminService'
+import { buttonClassName } from '../utils/buttonStyles'
 
 const emptyForm = {
   name: '',
@@ -178,7 +180,7 @@ function AdminCategoryManagementPage() {
             <button
               type="button"
               onClick={closeForm}
-              className="rounded-full border border-foreground px-8 py-2 text-sm font-medium hover:border-muted-foreground hover:text-muted-foreground"
+              className={buttonClassName('secondary')}
             >
               Cancel
             </button>
@@ -186,42 +188,64 @@ function AdminCategoryManagementPage() {
               type="button"
               onClick={submitCategory}
               disabled={submitting}
-              className="rounded-full bg-foreground px-8 py-2 text-sm font-medium text-white hover:bg-muted-foreground disabled:cursor-not-allowed disabled:opacity-60"
+              className={buttonClassName('primary')}
             >
               {submitting ? 'Saving...' : 'Save'}
             </button>
           </>
         }
       >
-        <section className="max-w-[520px]">
+        <section className="mx-auto w-full max-w-md space-y-8">
           {errors.api && (
-            <div className="mb-5 rounded-sm bg-red-500 px-5 py-3 text-sm font-medium text-white">
+            <div className="rounded-sm bg-red-500 px-5 py-3 text-sm font-medium text-white">
               {errors.api}
             </div>
           )}
 
-          <label className="block space-y-2">
-            <span className="text-sm font-medium text-muted-foreground">
-              Category name
-            </span>
-            <input
-              value={form.name}
-              onChange={(event) => updateForm('name', event.target.value)}
-              className="h-10 w-full rounded-sm border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:border-muted-foreground"
-              placeholder="Category name"
-            />
-          </label>
+          <FormSection
+            title="Category details"
+            description="Shown as the category tag on articles and in the filter list."
+          >
+            <label className="flex flex-col gap-3">
+              <span className="text-sm font-medium text-muted-foreground">
+                Category name
+              </span>
+              <input
+                value={form.name}
+                onChange={(event) => updateForm('name', event.target.value)}
+                className="h-10 w-full max-w-xs rounded-sm border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:border-muted-foreground"
+                placeholder="Category name"
+              />
+            </label>
+          </FormSection>
 
           {editingCategory && (
-            <button
-              type="button"
-              onClick={() => setDeleteTarget(editingCategory)}
-              disabled={Boolean(usageByCategory[editingCategory.name])}
-              className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-foreground hover:text-red-600 disabled:cursor-not-allowed disabled:text-muted-foreground"
-            >
-              <Trash2 className="h-4 w-4" />
-              Delete category
-            </button>
+            <div>
+              <button
+                type="button"
+                onClick={() => setDeleteTarget(editingCategory)}
+                disabled={Boolean(usageByCategory[editingCategory.name])}
+                title={
+                  usageByCategory[editingCategory.name]
+                    ? `Used by ${usageByCategory[editingCategory.name]} article(s) — reassign them before deleting this category`
+                    : undefined
+                }
+                className="inline-flex items-center gap-2 text-sm font-medium text-foreground hover:text-red-600 disabled:cursor-not-allowed disabled:text-muted-foreground"
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete category
+              </button>
+              {Boolean(usageByCategory[editingCategory.name]) && (
+                <p className="mt-1.5 text-xs text-muted-foreground">
+                  Used by{' '}
+                  <span className="font-semibold text-red-600">
+                    {usageByCategory[editingCategory.name]}
+                  </span>{' '}
+                  article{usageByCategory[editingCategory.name] === 1 ? '' : 's'} —
+                  reassign them to another category before deleting this one.
+                </p>
+              )}
+            </div>
           )}
         </section>
 
@@ -244,7 +268,7 @@ function AdminCategoryManagementPage() {
         <button
           type="button"
           onClick={openCreate}
-          className="inline-flex items-center gap-2 rounded-full bg-foreground px-8 py-2 text-sm font-medium text-white hover:bg-muted-foreground"
+          className={buttonClassName('primary')}
         >
           <Plus className="h-4 w-4" aria-hidden="true" />
           Create category
@@ -307,6 +331,11 @@ function AdminCategoryManagementPage() {
                         type="button"
                         onClick={() => setDeleteTarget(category)}
                         disabled={Boolean(usageByCategory[category.name])}
+                        title={
+                          usageByCategory[category.name]
+                            ? `Used by ${usageByCategory[category.name]} article(s) — reassign them before deleting this category`
+                            : undefined
+                        }
                         className="text-muted-foreground hover:text-red-600 disabled:cursor-not-allowed disabled:text-muted-foreground/50"
                         aria-label={`Delete ${category.name}`}
                       >
@@ -363,7 +392,7 @@ function DeleteCategoryDialog({ category, onCancel, onDelete, submitting }) {
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-full border border-foreground px-6 py-2 text-sm font-medium hover:border-muted-foreground hover:text-muted-foreground"
+            className={buttonClassName('secondary')}
           >
             Cancel
           </button>
@@ -371,7 +400,7 @@ function DeleteCategoryDialog({ category, onCancel, onDelete, submitting }) {
             type="button"
             onClick={onDelete}
             disabled={submitting}
-            className="rounded-full bg-foreground px-6 py-2 text-sm font-medium text-white hover:bg-muted-foreground disabled:cursor-not-allowed disabled:opacity-60"
+            className={buttonClassName('primary')}
           >
             {submitting ? 'Deleting...' : 'Delete'}
           </button>

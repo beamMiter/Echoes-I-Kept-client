@@ -147,7 +147,7 @@ function ResetPasswordPage() {
           <button
             type="submit"
             disabled={state.loading}
-            className="inline-flex h-12 min-w-[200px] items-center justify-center rounded-full bg-foreground px-6 text-xs font-medium text-white hover:bg-muted-foreground disabled:opacity-60"
+            className="inline-flex h-12 min-w-[200px] items-center justify-center rounded-md bg-foreground px-6 text-xs font-medium text-white hover:bg-muted-foreground disabled:opacity-60"
           >
             Reset password
           </button>
@@ -180,7 +180,7 @@ function ResetPasswordPage() {
               <button
                 type="button"
                 onClick={() => setConfirmOpen(false)}
-                className="inline-flex h-10 min-w-[120px] items-center justify-center rounded-full border border-foreground px-5 text-xs font-medium hover:border-muted-foreground hover:text-muted-foreground"
+                className="inline-flex h-10 min-w-[120px] items-center justify-center rounded-md border border-foreground px-5 text-xs font-medium hover:border-muted-foreground hover:text-muted-foreground"
               >
                 Cancel
               </button>
@@ -188,7 +188,7 @@ function ResetPasswordPage() {
                 type="button"
                 onClick={confirmResetPassword}
                 disabled={state.loading}
-                className="inline-flex h-10 min-w-[120px] items-center justify-center rounded-full bg-foreground px-5 text-xs font-medium text-white hover:bg-muted-foreground disabled:opacity-60"
+                className="inline-flex h-10 min-w-[120px] items-center justify-center rounded-md bg-foreground px-5 text-xs font-medium text-white hover:bg-muted-foreground disabled:opacity-60"
               >
                 Reset
               </button>

@@ -1,7 +1,21 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ArrowUpRight } from 'lucide-react'
+import gsap from 'gsap'
+import { useGSAP } from '@gsap/react'
+
+gsap.registerPlugin(useGSAP)
 
 const COVER_TRANSITION_MS = 360
+
+// The overlay SVG shares the container's 7:5 box, so these are in the same
+// coordinate space as the record: its centre sits at (462, 250) with a radius
+// of 238, which is what puts the pivot just clear of the top-right edge and
+// the needle down on the outer groove.
+const ARM_PIVOT = { x: 640, y: 70 }
+const ARM_NEEDLE = { x: 662, y: 240 }
+// Negative swings the needle outward, off the record — positive would drag it
+// toward the spindle.
+const ARM_LIFTED_DEG = -16
 
 function VinylAlbumCarousel({ tracks }) {
   const [activeIndex, setActiveIndex] = useState(0)
@@ -9,6 +23,50 @@ function VinylAlbumCarousel({ tracks }) {
   const [loadedCoverImage, setLoadedCoverImage] = useState(null)
   const activeTrack = tracks[activeIndex]
   const coverLoaded = loadedCoverImage === activeTrack.image
+  const stageRef = useRef(null)
+
+  useGSAP(
+    () => {
+      const mm = gsap.matchMedia()
+
+      mm.add(
+        {
+          motionOk: '(prefers-reduced-motion: no-preference)',
+          motionReduced: '(prefers-reduced-motion: reduce)',
+        },
+        (context) => {
+          // The arm is authored in the playing position, so reduced motion
+          // (and a failed JS load) just leaves it resting on the record.
+          if (context.conditions.motionReduced) return
+
+          const svgOrigin = `${ARM_PIVOT.x} ${ARM_PIVOT.y}`
+
+          // Lift, then set back down — the same gesture whether this is the
+          // first render or a track change, which is exactly what swapping a
+          // record looks like.
+          gsap
+            .timeline()
+            .to('[data-tonearm]', {
+              rotate: ARM_LIFTED_DEG,
+              duration: 0.35,
+              ease: 'power2.out',
+              svgOrigin,
+            })
+            .to(
+              '[data-tonearm]',
+              {
+                rotate: 0,
+                duration: 0.75,
+                ease: 'power2.inOut',
+                svgOrigin,
+              },
+              '+=0.1',
+            )
+        },
+      )
+    },
+    { dependencies: [activeTrack.id], scope: stageRef },
+  )
 
   useEffect(() => {
     if (!previousTrack) return undefined
@@ -34,7 +92,7 @@ function VinylAlbumCarousel({ tracks }) {
 
   return (
     <div className="w-full max-w-[520px]">
-      <div className="relative aspect-[7/5] w-full">
+      <div ref={stageRef} className="relative aspect-[7/5] w-full">
         <div className="absolute left-[32%] top-1/2 z-0 aspect-square w-[68%] -translate-y-1/2">
           <div
             className="vinyl-record vinyl-spin relative h-full w-full rounded-full shadow-[0_16px_28px_rgba(0,0,0,0.28)]"
@@ -85,6 +143,47 @@ function VinylAlbumCarousel({ tracks }) {
             onError={() => setLoadedCoverImage(activeTrack.image)}
           />
         </button>
+
+        {/* Sits above the record but to the right of the album cover, so it
+            never overlaps the clickable artwork. overflow-visible lets the arm
+            swing past the box edge when it lifts. */}
+        <svg
+          viewBox="0 0 700 500"
+          className="pointer-events-none absolute inset-0 z-30 h-full w-full overflow-visible"
+          aria-hidden="true"
+        >
+          <g data-tonearm>
+            <line
+              x1={ARM_PIVOT.x}
+              y1={ARM_PIVOT.y}
+              x2={ARM_NEEDLE.x}
+              y2={ARM_NEEDLE.y}
+              stroke="#33312E"
+              strokeWidth="9"
+              strokeLinecap="round"
+            />
+            <rect
+              x={ARM_NEEDLE.x - 15}
+              y={ARM_NEEDLE.y - 6}
+              width="30"
+              height="18"
+              rx="4"
+              fill="#33312E"
+              transform={`rotate(7 ${ARM_NEEDLE.x} ${ARM_NEEDLE.y})`}
+            />
+            {/* Counterweight on the far side of the pivot. */}
+            <circle cx={ARM_PIVOT.x - 4} cy={ARM_PIVOT.y - 26} r="14" fill="#4A4741" />
+          </g>
+          {/* Bearing housing stays put while the arm turns inside it. */}
+          <circle
+            cx={ARM_PIVOT.x}
+            cy={ARM_PIVOT.y}
+            r="17"
+            fill="#D9D5CF"
+            stroke="#33312E"
+            strokeWidth="3"
+          />
+        </svg>
       </div>
 
       <div className="mt-5 min-h-[112px] text-center" aria-live="polite">

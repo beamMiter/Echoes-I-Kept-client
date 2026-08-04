@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useState } from "react";
+import { ImageOff } from "lucide-react";
 import { getCategoryTagStyles } from "../utils/categoryStyles";
 
 function ArticleCard({
@@ -14,30 +15,38 @@ function ArticleCard({
 }) {
   const postPath = `/post/${id}`;
   const [loadedImage, setLoadedImage] = useState(null);
+  const [erroredImage, setErroredImage] = useState(null);
   const imageLoaded = loadedImage === image;
+  const imageErrored = erroredImage === image;
 
   return (
     <article className="flex flex-col gap-4">
       <Link
         to={postPath}
-        className="relative block aspect-[1.65/1] overflow-hidden rounded-md"
+        className="relative block aspect-[1.65/1] overflow-hidden rounded-md bg-[#EFEEEB]"
       >
-        {!imageLoaded && (
+        {!imageLoaded && !imageErrored && (
           <div
             className="skeleton-shimmer absolute inset-0 z-10"
             aria-hidden="true"
           />
         )}
-        <img
-          className={`h-full w-full object-cover transition-transform duration-300 hover:scale-105 ${
-            imageLoaded ? "opacity-100" : "opacity-0"
-          }`}
-          src={image}
-          alt={title}
-          loading="lazy"
-          onLoad={() => setLoadedImage(image)}
-          onError={() => setLoadedImage(image)}
-        />
+        {imageErrored ? (
+          <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+            <ImageOff className="h-8 w-8" strokeWidth={1.5} aria-hidden="true" />
+          </div>
+        ) : (
+          <img
+            className={`h-full w-full object-cover transition-transform duration-300 hover:scale-105 ${
+              imageLoaded ? "opacity-100" : "opacity-0"
+            }`}
+            src={image}
+            alt={title}
+            loading="lazy"
+            onLoad={() => setLoadedImage(image)}
+            onError={() => setErroredImage(image)}
+          />
+        )}
         {category && (
           <span
             className={`absolute top-0 right-0 rounded-bl-lg px-3 py-1.5 text-xs font-semibold uppercase tracking-wide shadow-md ring-1 ring-inset ${getCategoryTagStyles(category)}`}

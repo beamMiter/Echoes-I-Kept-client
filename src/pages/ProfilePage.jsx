@@ -100,7 +100,7 @@ function ProfilePage() {
               <User className="h-10 w-10 md:h-12 md:w-12" strokeWidth={1.5} />
             </div>
           )}
-          <label className="inline-flex h-10 cursor-pointer items-center justify-center rounded-full border border-foreground px-5 text-center text-xs font-medium hover:border-muted-foreground hover:text-muted-foreground">
+          <label className="inline-flex h-10 cursor-pointer items-center justify-center rounded-md border border-foreground px-5 text-center text-xs font-medium hover:border-muted-foreground hover:text-muted-foreground">
             Upload profile picture
             <input
               type="file"
@@ -170,7 +170,7 @@ function ProfilePage() {
           <button
             type="submit"
             disabled={state.loading}
-            className="inline-flex h-10 min-w-[120px] items-center justify-center rounded-full bg-foreground px-6 text-xs font-medium text-white hover:bg-muted-foreground disabled:opacity-60 md:h-12"
+            className="inline-flex h-10 min-w-[120px] items-center justify-center rounded-md bg-foreground px-6 text-xs font-medium text-white hover:bg-muted-foreground disabled:opacity-60 md:h-12"
           >
             Save
           </button>

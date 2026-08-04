@@ -110,7 +110,7 @@ function AdminLoginPage() {
             <button
               type="submit"
               disabled={state.loading}
-              className="inline-flex h-10 min-w-[96px] items-center justify-center gap-2 rounded-full bg-foreground px-6 text-xs font-medium text-white hover:bg-muted-foreground disabled:opacity-60"
+              className="inline-flex h-10 min-w-[96px] items-center justify-center gap-2 rounded-md bg-foreground px-6 text-xs font-medium text-white hover:bg-muted-foreground disabled:opacity-60"
             >
               {state.loading && <Loader2 className="h-4 w-4 animate-spin" />}
               Log in

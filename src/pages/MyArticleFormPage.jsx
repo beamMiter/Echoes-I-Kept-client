@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { ChevronLeft } from 'lucide-react'
 import { toast } from 'sonner'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
@@ -12,6 +13,7 @@ import {
   validateArticleForm,
 } from '../utils/articleForm'
 import { getStatusMeta } from '../utils/postStatus'
+import { buttonClassName } from '../utils/buttonStyles'
 import { useAuth } from '../context/useAuth'
 import { fetchCategories } from '../services/categoriesService'
 import { uploadArticleImage } from '../services/articleAdminService'
@@ -139,30 +141,37 @@ function MyArticleFormPage() {
   return (
     <div className="flex min-h-screen flex-col">
       <Navbar />
-      <main className="mx-auto w-full max-w-[900px] flex-1 px-4 py-10 sm:px-6 md:py-14">
+      <main className="mx-auto w-full max-w-[1100px] flex-1 px-4 py-10 sm:px-6 md:py-14">
         <div className="mb-8">
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="mb-4 text-sm text-muted-foreground hover:text-foreground"
-          >
-            ← Back
-          </button>
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl font-bold md:text-3xl">
-              {isEditing ? 'Edit post' : 'Write a post'}
-            </h1>
-            {statusMeta && (
-              <span
-                className={`inline-flex items-center gap-1.5 text-[12px] font-medium leading-none ${statusMeta.className}`}
-              >
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-2xl font-bold md:text-3xl">
+                {isEditing ? 'Edit post' : 'Write a post'}
+              </h1>
+              {statusMeta && (
                 <span
-                  className={`h-1 w-1 rounded-full ${statusMeta.dotClassName}`}
-                  aria-hidden="true"
-                />
-                {statusMeta.label}
-              </span>
-            )}
+                  className={`inline-flex items-center gap-1.5 text-[12px] font-medium leading-none ${statusMeta.className}`}
+                >
+                  <span
+                    className={`h-1 w-1 rounded-full ${statusMeta.dotClassName}`}
+                    aria-hidden="true"
+                  />
+                  {statusMeta.label}
+                </span>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              className="group inline-flex shrink-0 items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <ChevronLeft
+                className="h-5 w-5 transition-transform duration-200 ease-out group-hover:-translate-x-1"
+                strokeWidth={2.5}
+                aria-hidden="true"
+              />
+              Back
+            </button>
           </div>
           <p className="mt-2 text-sm text-muted-foreground">
             Posts are reviewed by an admin before they appear on the site.
@@ -185,7 +194,7 @@ function MyArticleFormPage() {
         {loading ? (
           <LoadingSpinner />
         ) : (
-          <form className="max-w-[760px]" onSubmit={(event) => event.preventDefault()}>
+          <form className="w-full" onSubmit={(event) => event.preventDefault()}>
             <ArticleForm
               form={form}
               errors={errors}
@@ -194,6 +203,7 @@ function MyArticleFormPage() {
               uploading={uploading}
               onChange={updateForm}
               onImageUpload={handleImageUpload}
+              onUploadContentImage={uploadArticleImage}
             />
 
             <div className="mt-8 flex flex-wrap gap-3">
@@ -201,7 +211,7 @@ function MyArticleFormPage() {
                 type="button"
                 onClick={() => handleSubmit('pending')}
                 disabled={submitting || uploading}
-                className="rounded-full bg-foreground px-8 py-2 text-sm font-medium text-white hover:bg-muted-foreground disabled:cursor-not-allowed disabled:opacity-60"
+                className={buttonClassName('primary')}
               >
                 {submitting ? 'Sending...' : 'Submit for review'}
               </button>
@@ -209,14 +219,14 @@ function MyArticleFormPage() {
                 type="button"
                 onClick={() => handleSubmit('draft')}
                 disabled={submitting || uploading}
-                className="rounded-full border border-foreground px-8 py-2 text-sm font-medium hover:border-muted-foreground hover:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-60"
+                className={buttonClassName('secondary')}
               >
                 Save as draft
               </button>
               <button
                 type="button"
                 onClick={() => navigate(-1)}
-                className="rounded-full border border-foreground px-8 py-2 text-sm font-medium hover:border-muted-foreground hover:text-muted-foreground"
+                className={buttonClassName('secondary')}
               >
                 Cancel
               </button>

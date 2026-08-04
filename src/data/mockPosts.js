@@ -243,20 +243,29 @@ export function getMockPostById(id) {
   return mockPosts.find((p) => p.id === numericId) || null;
 }
 
+// `fallbackPost` is the seed entry matched by id, and it is exactly that — a
+// fallback. It must stay below the real post: seed ids 1-6 collide with real
+// post ids, so checking it first meant a cover image edited through the admin
+// panel never showed up on the article page.
 export function getPostHeroImage(post, fallbackPost) {
   return (
-    fallbackPost?.detailImage ||
     post?.detailImage ||
-    fallbackPost?.image ||
     post?.image ||
+    fallbackPost?.detailImage ||
+    fallbackPost?.image ||
     ""
   );
 }
 
+// Only meaningful alongside a seed detailImage (the API has no position field),
+// so this may only apply when the hero actually came from the seed entry —
+// otherwise a seed's crop position would be applied to a different image.
 export function getPostHeroImagePosition(post, fallbackPost) {
-  return (
-    fallbackPost?.detailImagePosition || post?.detailImagePosition || "center"
-  );
+  if (post?.detailImage || post?.image) {
+    return post?.detailImagePosition || "center";
+  }
+
+  return fallbackPost?.detailImagePosition || "center";
 }
 
 export const mockLikesByPostId = {

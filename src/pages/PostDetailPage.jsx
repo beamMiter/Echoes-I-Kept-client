@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { useParams } from "react-router-dom";
-import { FileQuestion } from "lucide-react";
+import { FileQuestion, ImageOff } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import LoadingSpinner from "../components/LoadingSpinner";
@@ -24,12 +24,6 @@ const pageShellClassName = "no-image-drag flex flex-col min-h-screen";
 
 function preventImageDrag(e) {
   if (e.target instanceof HTMLImageElement) e.preventDefault();
-}
-
-function toMarkdownContent(content) {
-  if (!content) return null;
-
-  return content.replace(/(^|\n)(\d+\.\s[^\n]+)/g, "$1## $2");
 }
 
 function PostDetailPage() {
@@ -118,6 +112,7 @@ function PostDetailContent({ post, postId, detailImageSource }) {
     getMockCommentsByPostId(postId),
   );
   const [loadedHeroImage, setLoadedHeroImage] = useState(null);
+  const [erroredHeroImage, setErroredHeroImage] = useState(null);
   const [loginDialogOpen, setLoginDialogOpen] = useState(false);
 
   const requireLogin = () => {
@@ -151,6 +146,7 @@ function PostDetailContent({ post, postId, detailImageSource }) {
   const heroImage = getPostHeroImage(post, detailImageSource);
   const heroImagePosition = getPostHeroImagePosition(post, detailImageSource);
   const heroImageLoaded = loadedHeroImage === heroImage;
+  const heroImageErrored = erroredHeroImage === heroImage;
   const author = {
     name: post.author,
     profilePic: post.authorAvatar,
@@ -162,24 +158,31 @@ function PostDetailContent({ post, postId, detailImageSource }) {
         <div className="max-w-7xl mx-auto space-y-8 container md:px-8 pb-20 md:pb-28 md:pt-8 lg:pt-16">
           <div className="space-y-4 md:px-4">
             {heroImage && (
-              <div className="relative h-[260px] w-full overflow-hidden md:rounded-lg sm:h-[340px] md:h-[587px]">
-                {!heroImageLoaded && (
+              <div className="relative h-[260px] w-full overflow-hidden bg-[#EFEEEB] md:rounded-lg sm:h-[340px] md:h-[587px]">
+                {!heroImageLoaded && !heroImageErrored && (
                   <div
                     className="skeleton-shimmer absolute inset-0 z-10"
                     aria-hidden="true"
                   />
                 )}
-                <img
-                  src={heroImage}
-                  alt={post.title}
-                  draggable={false}
-                  className={`h-full w-full object-cover transition-opacity duration-300 ${
-                    heroImageLoaded ? "opacity-100" : "opacity-0"
-                  }`}
-                  style={{ objectPosition: heroImagePosition }}
-                  onLoad={() => setLoadedHeroImage(heroImage)}
-                  onError={() => setLoadedHeroImage(heroImage)}
-                />
+                {heroImageErrored ? (
+                  <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-muted-foreground">
+                    <ImageOff className="h-10 w-10" strokeWidth={1.5} aria-hidden="true" />
+                    <span className="text-sm">Image unavailable</span>
+                  </div>
+                ) : (
+                  <img
+                    src={heroImage}
+                    alt={post.title}
+                    draggable={false}
+                    className={`h-full w-full object-cover transition-opacity duration-300 ${
+                      heroImageLoaded ? "opacity-100" : "opacity-0"
+                    }`}
+                    style={{ objectPosition: heroImagePosition }}
+                    onLoad={() => setLoadedHeroImage(heroImage)}
+                    onError={() => setErroredHeroImage(heroImage)}
+                  />
+                )}
               </div>
             )}
           </div>
@@ -210,7 +213,7 @@ function PostDetailContent({ post, postId, detailImageSource }) {
                 </p>
 
                 <div className="markdown font-sans text-[15px] leading-[1.55]">
-                  <ReactMarkdown>{toMarkdownContent(content)}</ReactMarkdown>
+                  <ReactMarkdown>{content}</ReactMarkdown>
                 </div>
               </article>
 
