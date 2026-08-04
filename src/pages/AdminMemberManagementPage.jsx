@@ -247,7 +247,7 @@ function AdminMemberManagementPage() {
           </>
         }
       >
-        <section className="max-w-[760px]">
+        <section className="mx-auto w-full max-w-[1100px]">
           {apiError && (
             <div className="mb-5 rounded-sm bg-red-500 px-5 py-3 text-sm font-medium text-white">
               {apiError}
