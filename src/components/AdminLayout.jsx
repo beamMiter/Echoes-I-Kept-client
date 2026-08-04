@@ -123,13 +123,10 @@ function AdminSidebarContent({ onLinkClick, onLogout }) {
             alt=""
             className="h-9 w-9 shrink-0"
           />
-          <span className="text-lg font-bold leading-tight tracking-tight">
-            Echoes I Kept
+          <span className="text-lg font-bold leading-tight tracking-tight text-[#FF9950]">
+            Admin panel
           </span>
         </Link>
-        <p className="mt-2 text-center text-sm font-medium leading-none text-[#FF9950]">
-          Admin panel
-        </p>
       </div>
 
       {/* Top-aligned, not centered — centering left a dead gap the height of
