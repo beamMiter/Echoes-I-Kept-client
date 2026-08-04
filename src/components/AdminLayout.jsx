@@ -127,7 +127,7 @@ function AdminSidebarContent({ onLinkClick, onLogout }) {
             alt=""
             className="h-10 w-10 shrink-0 opacity-70 transition-opacity duration-300 group-hover:opacity-100"
           />
-          <span className="block border-b-2 border-foreground pb-0.5 text-2xl font-bold leading-tight tracking-tight">
+          <span className="block text-2xl font-bold leading-tight tracking-tight text-[#FF9950]">
             Admin panel
           </span>
         </Link>
