@@ -221,12 +221,13 @@ function ArticleForm({
             </div>
             <div className="flex flex-col gap-4">
               {contentImageUrl ? (
-                // Full width of the form, no crop box, no height cap — the
-                // published article's .markdown img is max-width: 100%,
-                // height: auto and nothing else, so this preview needs to
-                // fill the same width the real content column does to show
-                // the actual size, not a scaled-down stand-in for it.
-                <img src={contentImageUrl} alt="" className="w-full rounded-md" />
+                // Raw pixel dimensions — no width/height class on the img at
+                // all, so the browser renders it at its native size instead
+                // of scaling to fit the form. Scrolls in both directions
+                // inside a bounded box for images bigger than that box.
+                <div className="max-h-[600px] w-full overflow-auto rounded-md border border-border bg-[#EFEEEB]">
+                  <img src={contentImageUrl} alt="" className="block" />
+                </div>
               ) : (
                 // Nothing uploaded yet, so there's no "real size" to match —
                 // use the same placeholder shape as the cover image above
