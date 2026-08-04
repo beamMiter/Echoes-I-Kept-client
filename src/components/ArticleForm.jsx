@@ -228,17 +228,21 @@ function ArticleForm({
               </p>
             </div>
             <div className="flex flex-col gap-4">
-              <div className="flex min-h-[160px] w-full max-w-md items-center justify-center overflow-hidden rounded-md bg-[#EFEEEB]">
-                {contentImageUrl ? (
-                  <img
-                    src={contentImageUrl}
-                    alt=""
-                    className="max-h-[400px] w-full object-contain"
-                  />
-                ) : (
+              {contentImageUrl ? (
+                // No cropping box, no height cap — this is exactly how it
+                // renders in the published article (.markdown img is
+                // max-width: 100%, height: auto, nothing else), so what's
+                // previewed here is the real size, not a stand-in for it.
+                <img
+                  src={contentImageUrl}
+                  alt=""
+                  className="w-full max-w-md rounded-md"
+                />
+              ) : (
+                <div className="flex h-40 w-full max-w-md items-center justify-center rounded-md bg-[#EFEEEB]">
                   <Image className="h-8 w-8 text-muted-foreground" />
-                )}
-              </div>
+                </div>
+              )}
               <div className="flex flex-wrap items-center gap-2">
                 <label className="inline-flex w-fit cursor-pointer items-center gap-1.5 rounded-md border border-foreground px-4 py-2 text-xs font-medium hover:border-muted-foreground hover:text-muted-foreground has-disabled:cursor-not-allowed has-disabled:opacity-60">
                   <ImagePlus className="h-3.5 w-3.5" aria-hidden="true" />
