@@ -110,8 +110,11 @@ function AdminLayout({ actions, children, title }) {
   )
 }
 
+// No leading-none here: the label span is `truncate` (overflow-hidden), and a
+// line-height of exactly 1 clips descenders (the g in "management"). The row is
+// h-11 + items-center, so it doesn't need a forced line-height anyway.
 const sidebarItemClassName =
-  'flex h-11 items-center gap-3 rounded-md px-3 text-sm leading-none transition-colors'
+  'flex h-11 items-center gap-3 rounded-md px-3 text-sm transition-colors'
 
 function AdminSidebarContent({ onLinkClick, onLogout }) {
   return (
