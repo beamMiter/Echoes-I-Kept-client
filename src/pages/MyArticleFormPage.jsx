@@ -162,7 +162,7 @@ function MyArticleFormPage() {
             <button
               type="button"
               onClick={() => navigate(-1)}
-              className="group inline-flex shrink-0 items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-[#EFEEEB] hover:text-foreground"
+              className="group inline-flex shrink-0 items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
               <ChevronLeft
                 className="h-5 w-5 transition-transform duration-200 ease-out group-hover:-translate-x-1"
