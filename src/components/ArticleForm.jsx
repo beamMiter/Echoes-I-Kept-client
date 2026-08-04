@@ -225,7 +225,7 @@ function ArticleForm({
                 // all, so the browser renders it at its native size instead
                 // of scaling to fit the form. Scrolls in both directions
                 // inside a bounded box for images bigger than that box.
-                <div className="max-h-[600px] w-full overflow-auto rounded-md border border-border bg-[#EFEEEB]">
+                <div className="inline-block max-h-[600px] max-w-full overflow-auto rounded-md border border-border">
                   <img src={contentImageUrl} alt="" className="block" />
                 </div>
               ) : (
