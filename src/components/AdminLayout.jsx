@@ -125,7 +125,7 @@ function AdminSidebarContent({ onLinkClick, onLogout }) {
         </p>
       </div>
 
-      <nav className="flex-1">
+      <nav className="flex flex-1 flex-col justify-center">
         {navItems.map(({ icon: Icon, label, path }) =>
           path ? (
             <NavLink
