@@ -47,8 +47,15 @@ function AdminLayout({ actions, children, title }) {
 
         <main className="min-w-0 flex-1">
           <div className="flex h-16 items-center justify-between border-b border-border px-5 lg:hidden">
-            <Link to="/" className="text-2xl font-medium leading-none">
-              hh<span className="text-green-500">.</span>
+            <Link to="/" className="flex items-center gap-2">
+              <img
+                src="/svg/listening-to-music.svg"
+                alt=""
+                className="h-8 w-8"
+              />
+              <span className="text-lg font-bold leading-none tracking-tight">
+                Echoes I Kept
+              </span>
             </Link>
             <button
               type="button"
@@ -107,12 +114,11 @@ function AdminSidebarContent({ onLinkClick, onLogout }) {
   return (
     <>
       <div className="px-6 pb-8 pt-12">
-        <Link
-          to="/"
-          onClick={onLinkClick}
-          className="text-[32px] font-medium leading-none"
-        >
-          hh<span className="text-green-500">.</span>
+        <Link to="/" onClick={onLinkClick} className="flex items-center gap-2">
+          <img src="/svg/listening-to-music.svg" alt="" className="h-9 w-9" />
+          <span className="text-lg font-bold leading-none tracking-tight">
+            Echoes I Kept
+          </span>
         </Link>
         <p className="mt-3 text-[15px] font-medium leading-none text-[#FF9950]">
           Admin panel
@@ -159,7 +165,7 @@ function AdminSidebarContent({ onLinkClick, onLogout }) {
             className="h-[15px] w-[15px] shrink-0"
             strokeWidth={1.75}
           />
-          <span className="truncate">hh. website</span>
+          <span className="truncate">View website</span>
         </Link>
         <button
           type="button"
