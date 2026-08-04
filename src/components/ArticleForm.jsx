@@ -50,7 +50,7 @@ function ArticleForm({
     <div className="space-y-8">
       <FormSection
         title="Cover image"
-        description="The thumbnail readers see on the homepage and article cards."
+        description="The banner at the top of the article, and its thumbnail on the homepage and article cards. One per article."
       >
         <div className="flex flex-col gap-4">
           <div className="flex aspect-[1.65/1] w-full max-w-[500px] items-center justify-center overflow-hidden rounded-md bg-[#EFEEEB]">
@@ -65,7 +65,7 @@ function ArticleForm({
             )}
           </div>
           <label className="inline-flex w-fit cursor-pointer rounded-md border border-foreground px-8 py-2 text-sm font-medium hover:border-muted-foreground hover:text-muted-foreground has-disabled:cursor-not-allowed has-disabled:opacity-60">
-            {uploading ? 'Uploading...' : 'Upload thumbnail image'}
+            {uploading ? 'Uploading...' : 'Upload cover image'}
             <input
               type="file"
               accept="image/*"
@@ -212,11 +212,13 @@ function ArticleForm({
           <div className="flex flex-col gap-3">
             <div>
               <span className="text-sm font-medium text-muted-foreground">
-                Insert an image into content (optional)
+                In-content image (optional)
               </span>
               <p className="mt-0.5 text-xs text-muted-foreground">
-                Upload an image, then copy the snippet and paste it into
-                Content wherever you want it to appear.
+                A picture that sits inside the article body, between
+                paragraphs — not the cover image above. Upload it, copy the
+                markdown, and paste that into Content where you want it to
+                appear. Repeat for as many as you need.
               </p>
             </div>
             <div className="flex flex-col items-start gap-4">
@@ -239,7 +241,9 @@ function ArticleForm({
               )}
               <div className="flex flex-wrap items-center gap-2">
                 <label className="inline-flex w-fit cursor-pointer rounded-md border border-foreground px-8 py-2 text-sm font-medium hover:border-muted-foreground hover:text-muted-foreground has-disabled:cursor-not-allowed has-disabled:opacity-60">
-                  {uploadingContentImage ? 'Uploading...' : 'Upload image'}
+                  {uploadingContentImage
+                    ? 'Uploading...'
+                    : 'Upload in-content image'}
                   <input
                     type="file"
                     accept="image/*"
