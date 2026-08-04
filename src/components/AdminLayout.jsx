@@ -127,7 +127,7 @@ function AdminSidebarContent({ onLinkClick, onLogout }) {
             Echoes I Kept
           </span>
         </Link>
-        <p className="mt-2 text-sm font-medium leading-none text-[#FF9950]">
+        <p className="mt-2 text-center text-sm font-medium leading-none text-[#FF9950]">
           Admin panel
         </p>
       </div>
