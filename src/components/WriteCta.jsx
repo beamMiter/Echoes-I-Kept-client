@@ -23,22 +23,22 @@ function WriteCta() {
 
       // Decorative only — reduced-motion visitors get a plain static button.
       mm.add('(prefers-reduced-motion: no-preference)', () => {
-        // A slow sheen across the button on a long repeat delay, so it reads
-        // as an occasional nudge rather than a blinking ad.
+        // Light drifting across a glass surface, not a sparkle: a wide, soft
+        // gradient moving slowly, far apart enough that it reads as ambient.
         //
-        // xPercent is a share of the sheen's OWN width (a third of the
-        // button), so a full crossing runs -100 (right edge at the button's
-        // left edge) to 300 (left edge at the button's right edge). The extra
-        // 40 on each end keeps the blurred, skewed edges out of frame.
+        // xPercent is a share of the sheen's OWN width (half the button), so a
+        // full crossing runs -100 (its right edge at the button's left edge) to
+        // 200 (its left edge at the button's right edge), plus a little margin
+        // so the skewed corners never show.
         gsap.fromTo(
           '[data-cta-sheen]',
-          { xPercent: -140 },
+          { xPercent: -120 },
           {
-            xPercent: 340,
-            duration: 0.9,
-            ease: 'power1.inOut',
+            xPercent: 220,
+            duration: 1.8,
+            ease: 'sine.inOut',
             repeat: -1,
-            repeatDelay: 5,
+            repeatDelay: 9,
           },
         )
 
@@ -108,7 +108,7 @@ function WriteCta() {
         <span
           data-cta-sheen
           aria-hidden="true"
-          className="pointer-events-none absolute inset-y-0 left-0 w-1/3 skew-x-[-20deg] bg-white/25 blur-[6px]"
+          className="pointer-events-none absolute inset-y-0 left-0 w-1/2 skew-x-[-20deg] bg-gradient-to-r from-transparent via-white/15 to-transparent"
         />
         <NotebookPen data-cta-icon className="h-4 w-4" aria-hidden="true" />
         Write a post
