@@ -219,19 +219,20 @@ function ArticleForm({
                 Content wherever you want it to appear.
               </p>
             </div>
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col items-start gap-4">
               {contentImageUrl ? (
-                // Raw pixel dimensions — no width/height class on the img at
-                // all, so the browser renders it at its native size instead
-                // of scaling to fit the form. Scrolls in both directions
-                // inside a bounded box for images bigger than that box.
-                <div className="inline-block max-h-[600px] max-w-full overflow-auto rounded-md border border-border">
+                // The img carries no width/height class, so the browser draws
+                // it at its raw pixel size. `self-start` is what actually
+                // makes the wrapper shrink-wrap: this is a flex item, and a
+                // flex item is blockified (inline-block is ignored) and
+                // stretched to full width by default — that stretch was
+                // leaving a filled gap beside anything narrower than the form.
+                <div className="max-h-[600px] max-w-full self-start overflow-auto rounded-md border border-border">
                   <img src={contentImageUrl} alt="" className="block" />
                 </div>
               ) : (
                 // Nothing uploaded yet, so there's no "real size" to match —
-                // use the same placeholder shape as the cover image above
-                // instead of an arbitrary full-width bar.
+                // use the same placeholder shape as the cover image above.
                 <div className="flex aspect-[1.65/1] w-full max-w-[500px] items-center justify-center overflow-hidden rounded-md bg-[#EFEEEB]">
                   <Image className="h-8 w-8 text-muted-foreground" />
                 </div>
@@ -251,16 +252,16 @@ function ArticleForm({
                   <button
                     type="button"
                     onClick={handleCopySnippet}
-                    className="inline-flex items-center gap-1.5 rounded-md border border-foreground px-4 py-2 text-xs font-medium hover:border-muted-foreground hover:text-muted-foreground"
+                    className="inline-flex items-center gap-1.5 rounded-md border border-foreground px-8 py-2 text-sm font-medium hover:border-muted-foreground hover:text-muted-foreground"
                   >
                     {snippetCopied ? (
                       <>
-                        <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                        <Check className="h-4 w-4" aria-hidden="true" />
                         Copied
                       </>
                     ) : (
                       <>
-                        <Copy className="h-3.5 w-3.5" aria-hidden="true" />
+                        <Copy className="h-4 w-4" aria-hidden="true" />
                         Copy markdown
                       </>
                     )}
