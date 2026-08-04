@@ -133,22 +133,22 @@ function AdminSidebarContent({ onLinkClick, onLogout }) {
               to={path}
               onClick={onLinkClick}
               className={({ isActive }) =>
-                `flex h-11 items-center gap-3 px-6 text-[11px] leading-none transition-colors ${
+                `flex h-11 items-center gap-3 px-6 text-[13px] leading-none transition-colors ${
                   isActive
                     ? 'bg-[#DAD7D2] font-medium text-foreground'
                     : 'text-muted-foreground hover:bg-[#E4E1DC] hover:text-foreground'
                 }`
               }
             >
-              <Icon className="h-[15px] w-[15px] shrink-0" strokeWidth={1.75} />
+              <Icon className="h-4 w-4 shrink-0" strokeWidth={1.75} />
               <span className="min-w-0 truncate">{label}</span>
             </NavLink>
           ) : (
             <div
               key={label}
-              className="flex h-11 items-center gap-3 px-6 text-[11px] leading-none text-muted-foreground"
+              className="flex h-11 items-center gap-3 px-6 text-[13px] leading-none text-muted-foreground"
             >
-              <Icon className="h-[15px] w-[15px] shrink-0" strokeWidth={1.75} />
+              <Icon className="h-4 w-4 shrink-0" strokeWidth={1.75} />
               <span className="min-w-0 truncate">{label}</span>
             </div>
           ),
@@ -159,10 +159,10 @@ function AdminSidebarContent({ onLinkClick, onLogout }) {
         <Link
           to="/"
           onClick={onLinkClick}
-          className="flex h-10 items-center gap-3 px-6 text-[11px] leading-none text-muted-foreground hover:text-foreground"
+          className="flex h-10 items-center gap-3 px-6 text-[13px] leading-none text-muted-foreground hover:text-foreground"
         >
           <ExternalLink
-            className="h-[15px] w-[15px] shrink-0"
+            className="h-4 w-4 shrink-0"
             strokeWidth={1.75}
           />
           <span className="truncate">View website</span>
@@ -170,10 +170,10 @@ function AdminSidebarContent({ onLinkClick, onLogout }) {
         <button
           type="button"
           onClick={onLogout}
-          className="flex h-10 w-full items-center gap-3 px-6 text-[11px] leading-none text-muted-foreground hover:text-foreground"
+          className="flex h-10 w-full items-center gap-3 px-6 text-[13px] leading-none text-muted-foreground hover:text-foreground"
         >
           <LogOut
-            className="h-[15px] w-[15px] shrink-0"
+            className="h-4 w-4 shrink-0"
             strokeWidth={1.75}
           />
           <span className="truncate">Log out</span>
