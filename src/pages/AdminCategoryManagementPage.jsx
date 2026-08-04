@@ -193,31 +193,42 @@ function AdminCategoryManagementPage() {
           </>
         }
       >
-        <section className="max-w-[520px]">
+        <section className="mx-auto w-full max-w-md space-y-8">
           {errors.api && (
-            <div className="mb-5 rounded-sm bg-red-500 px-5 py-3 text-sm font-medium text-white">
+            <div className="rounded-sm bg-red-500 px-5 py-3 text-sm font-medium text-white">
               {errors.api}
             </div>
           )}
 
-          <label className="block space-y-2">
-            <span className="text-sm font-medium text-muted-foreground">
-              Category name
-            </span>
-            <input
-              value={form.name}
-              onChange={(event) => updateForm('name', event.target.value)}
-              className="h-10 w-full rounded-sm border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:border-muted-foreground"
-              placeholder="Category name"
-            />
-          </label>
+          <div className="space-y-4">
+            <div>
+              <h2 className="text-sm font-semibold text-foreground">
+                Category details
+              </h2>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Shown as the category tag on articles and in the filter list.
+              </p>
+            </div>
+
+            <label className="flex flex-col gap-3">
+              <span className="text-sm font-medium text-muted-foreground">
+                Category name
+              </span>
+              <input
+                value={form.name}
+                onChange={(event) => updateForm('name', event.target.value)}
+                className="h-10 w-full max-w-xs rounded-sm border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:border-muted-foreground"
+                placeholder="Category name"
+              />
+            </label>
+          </div>
 
           {editingCategory && (
             <button
               type="button"
               onClick={() => setDeleteTarget(editingCategory)}
               disabled={Boolean(usageByCategory[editingCategory.name])}
-              className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-foreground hover:text-red-600 disabled:cursor-not-allowed disabled:text-muted-foreground"
+              className="inline-flex items-center gap-2 text-sm font-medium text-foreground hover:text-red-600 disabled:cursor-not-allowed disabled:text-muted-foreground"
             >
               <Trash2 className="h-4 w-4" />
               Delete category
