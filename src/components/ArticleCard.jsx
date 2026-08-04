@@ -20,7 +20,8 @@ function ArticleCard({
   const imageErrored = erroredImage === image;
 
   return (
-    <article className="flex flex-col gap-4">
+    // data-article-card is the hook LatestArticles' scroll reveal targets.
+    <article data-article-card className="flex flex-col gap-4">
       <Link
         to={postPath}
         className="relative block aspect-[1.65/1] overflow-hidden rounded-md bg-[#EFEEEB]"
