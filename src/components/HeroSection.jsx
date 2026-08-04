@@ -1,16 +1,34 @@
-import { mockPosts } from "../data/mockPosts";
+import { useEffect, useState } from "react";
+import { fetchPublishedPosts } from "../services/postsService";
 import VinylAlbumCarousel from "./VinylAlbumCarousel";
 
+const HERO_TRACK_COUNT = 6;
+
+function toHeroTrack({ id, artist, bestPick, image, spotifyUrl }) {
+  return { id, artist, bestPick, image, spotifyUrl };
+}
+
 function HeroSection() {
-  const heroTracks = mockPosts.map(
-    ({ id, artist, bestPick, image, spotifyUrl }) => ({
-      id,
-      artist,
-      bestPick,
-      image,
-      spotifyUrl,
-    }),
-  );
+  const [heroTracks, setHeroTracks] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetchPublishedPosts({ limit: HERO_TRACK_COUNT })
+      .then((result) => {
+        if (cancelled) return;
+        setHeroTracks(result.posts.map(toHeroTrack));
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <main className="mx-auto overflow-hidden px-4 py-12 md:px-8 md:py-14 lg:w-[clamp(960px,92vw,1380px)] lg:px-0 lg:pb-28 lg:pt-16">
@@ -32,13 +50,25 @@ function HeroSection() {
             song from each of them that means the most to me.
           </p>
           <p className="mt-5 text-[13px] font-medium text-foreground">
-            06 artists&nbsp;&nbsp;·&nbsp;&nbsp;06
+            {String(heroTracks.length).padStart(2, "0")} artists&nbsp;&nbsp;
+            ·&nbsp;&nbsp;{String(heroTracks.length).padStart(2, "0")}
             songs&nbsp;&nbsp;·&nbsp;&nbsp;one best pick each
           </p>
         </div>
 
         <div className="mb-10 flex w-full max-w-[520px] justify-center lg:mb-0">
-          <VinylAlbumCarousel tracks={heroTracks} />
+          {heroTracks.length > 0 ? (
+            <VinylAlbumCarousel tracks={heroTracks} />
+          ) : (
+            <div className="relative aspect-[7/5] w-full">
+              <div
+                className={`absolute inset-0 rounded-full bg-[#EFEEEB] ${
+                  loading ? "animate-pulse" : ""
+                }`}
+                aria-hidden="true"
+              />
+            </div>
+          )}
         </div>
 
         <div className="max-w-[380px] border-l-2 border-foreground/15 pl-6 lg:w-full lg:max-w-[340px]">

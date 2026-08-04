@@ -21,7 +21,10 @@ function VinylAlbumCarousel({ tracks }) {
   const [activeIndex, setActiveIndex] = useState(0)
   const [previousTrack, setPreviousTrack] = useState(null)
   const [loadedCoverImage, setLoadedCoverImage] = useState(null)
-  const activeTrack = tracks[activeIndex]
+  // `tracks` can be replaced with a shorter, real-data list after the initial
+  // (mock-seeded) render — clamp so a stale index from before that swap never
+  // reads past the new array's end.
+  const activeTrack = tracks[activeIndex] ?? tracks[0]
   const coverLoaded = loadedCoverImage === activeTrack.image
   const stageRef = useRef(null)
 
