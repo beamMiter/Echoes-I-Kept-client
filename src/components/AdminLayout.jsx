@@ -41,7 +41,7 @@ function AdminLayout({ actions, children, title }) {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="flex min-h-screen">
-        <aside className="hidden w-64 shrink-0 flex-col bg-[#EFEEEB] lg:flex">
+        <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col bg-[#EFEEEB] lg:flex">
           <AdminSidebarContent onLogout={handleLogout} />
         </aside>
 
@@ -110,73 +110,66 @@ function AdminLayout({ actions, children, title }) {
   )
 }
 
+const sidebarItemClassName =
+  'flex h-11 items-center gap-3 rounded-md px-3 text-sm leading-none transition-colors'
+
 function AdminSidebarContent({ onLinkClick, onLogout }) {
   return (
     <>
-      <div className="px-6 pb-8 pt-6">
-        <Link to="/" onClick={onLinkClick} className="flex items-center gap-2">
-          <img src="/svg/listening-to-music.svg" alt="" className="h-9 w-9" />
-          <span className="text-lg font-bold leading-none tracking-tight">
+      <div className="border-b border-[#DAD7D2] px-5 py-5">
+        <Link to="/" onClick={onLinkClick} className="flex items-center gap-2.5">
+          <img
+            src="/svg/listening-to-music.svg"
+            alt=""
+            className="h-9 w-9 shrink-0"
+          />
+          <span className="text-lg font-bold leading-tight tracking-tight">
             Echoes I Kept
           </span>
         </Link>
-        <p className="mt-3 text-center text-[15px] font-medium leading-none text-[#FF9950]">
+        <p className="mt-2 text-sm font-medium leading-none text-[#FF9950]">
           Admin panel
         </p>
       </div>
 
-      <nav className="flex flex-1 flex-col justify-center">
-        {navItems.map(({ icon: Icon, label, path }) =>
-          path ? (
-            <NavLink
-              key={label}
-              to={path}
-              onClick={onLinkClick}
-              className={({ isActive }) =>
-                `flex h-11 items-center gap-3 px-6 text-[13px] leading-none transition-colors ${
-                  isActive
-                    ? 'bg-[#DAD7D2] font-medium text-foreground'
-                    : 'text-muted-foreground hover:bg-[#E4E1DC] hover:text-foreground'
-                }`
-              }
-            >
-              <Icon className="h-4 w-4 shrink-0" strokeWidth={1.75} />
-              <span className="min-w-0 truncate">{label}</span>
-            </NavLink>
-          ) : (
-            <div
-              key={label}
-              className="flex h-11 items-center gap-3 px-6 text-[13px] leading-none text-muted-foreground"
-            >
-              <Icon className="h-4 w-4 shrink-0" strokeWidth={1.75} />
-              <span className="min-w-0 truncate">{label}</span>
-            </div>
-          ),
-        )}
+      {/* Top-aligned, not centered — centering left a dead gap the height of
+          half the viewport on tall screens. */}
+      <nav className="flex-1 space-y-0.5 overflow-y-auto p-3">
+        {navItems.map(({ icon: Icon, label, path }) => (
+          <NavLink
+            key={label}
+            to={path}
+            onClick={onLinkClick}
+            className={({ isActive }) =>
+              `${sidebarItemClassName} ${
+                isActive
+                  ? 'bg-[#DAD7D2] font-medium text-foreground'
+                  : 'text-muted-foreground hover:bg-[#E4E1DC] hover:text-foreground'
+              }`
+            }
+          >
+            <Icon className="h-4 w-4 shrink-0" strokeWidth={1.75} />
+            <span className="min-w-0 truncate">{label}</span>
+          </NavLink>
+        ))}
       </nav>
 
-      <div className="border-t border-border py-3">
+      <div className="space-y-0.5 border-t border-[#DAD7D2] p-3">
         <Link
           to="/"
           onClick={onLinkClick}
-          className="flex h-10 items-center gap-3 px-6 text-[13px] leading-none text-muted-foreground hover:text-foreground"
+          className={`${sidebarItemClassName} text-muted-foreground hover:bg-[#E4E1DC] hover:text-foreground`}
         >
-          <ExternalLink
-            className="h-4 w-4 shrink-0"
-            strokeWidth={1.75}
-          />
-          <span className="truncate">View website</span>
+          <ExternalLink className="h-4 w-4 shrink-0" strokeWidth={1.75} />
+          <span className="min-w-0 truncate">View website</span>
         </Link>
         <button
           type="button"
           onClick={onLogout}
-          className="flex h-10 w-full items-center gap-3 px-6 text-[13px] leading-none text-muted-foreground hover:text-foreground"
+          className={`${sidebarItemClassName} w-full text-muted-foreground hover:bg-[#E4E1DC] hover:text-foreground`}
         >
-          <LogOut
-            className="h-4 w-4 shrink-0"
-            strokeWidth={1.75}
-          />
-          <span className="truncate">Log out</span>
+          <LogOut className="h-4 w-4 shrink-0" strokeWidth={1.75} />
+          <span className="min-w-0 truncate">Log out</span>
         </button>
       </div>
     </>
