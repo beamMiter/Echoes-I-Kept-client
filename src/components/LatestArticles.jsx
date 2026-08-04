@@ -1,9 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronDown, Loader2, Search, SearchX, X } from "lucide-react";
-import gsap from "gsap";
-import { useGSAP } from "@gsap/react";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import ArticleCard from "./ArticleCard";
 import ArticleCardSkeleton from "./ui/ArticleCardSkeleton";
 import {
@@ -14,15 +11,12 @@ import {
 import { fetchPublishedPosts } from "../services/postsService";
 import { fetchCategories } from "../services/categoriesService";
 
-gsap.registerPlugin(useGSAP, ScrollTrigger);
-
 const PAGE_SIZE = 6;
 const SEARCH_MAX_LENGTH = 80;
 
 function LatestArticles({ ctaSlot }) {
   const navigate = useNavigate();
 
-  const sectionRef = useRef(null);
   const tabRefs = useRef({});
   const [tabIndicator, setTabIndicator] = useState({
     left: 0,
@@ -167,33 +161,8 @@ function LatestArticles({ ctaSlot }) {
     setLoading(false);
   };
 
-  useGSAP(
-    () => {
-      const mm = gsap.matchMedia();
-
-      mm.add("(prefers-reduced-motion: no-preference)", () => {
-        // Cards already in view when the list renders shouldn't sit invisible
-        // waiting for a scroll, so each card triggers off its own position and
-        // `once` keeps it from replaying on the way back up.
-        gsap.utils.toArray("[data-article-card]").forEach((card) => {
-          gsap.from(card, {
-            opacity: 0,
-            y: 24,
-            duration: 0.55,
-            ease: "power2.out",
-            scrollTrigger: { trigger: card, start: "top 92%", once: true },
-          });
-        });
-      });
-    },
-    { dependencies: [visiblePosts.length, isInitialLoading], scope: sectionRef },
-  );
-
   return (
-    <section
-      ref={sectionRef}
-      className="mx-auto mb-20 w-full max-w-[1040px] px-4 sm:px-6 lg:px-0"
-    >
+    <section className="mx-auto mb-20 w-full max-w-[1040px] px-4 sm:px-6 lg:px-0">
       <div className="mb-10 rounded-[4px] bg-[#EFEEEB] px-4 py-3">
         {ctaSlot}
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-6">

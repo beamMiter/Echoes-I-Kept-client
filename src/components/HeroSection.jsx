@@ -1,14 +1,7 @@
-import { useRef } from "react";
-import gsap from "gsap";
-import { useGSAP } from "@gsap/react";
 import { mockPosts } from "../data/mockPosts";
 import VinylAlbumCarousel from "./VinylAlbumCarousel";
 
-gsap.registerPlugin(useGSAP);
-
 function HeroSection() {
-  const heroRef = useRef(null);
-
   const heroTracks = mockPosts.map(
     ({ id, artist, bestPick, image, spotifyUrl }) => ({
       id,
@@ -19,34 +12,10 @@ function HeroSection() {
     }),
   );
 
-  useGSAP(
-    () => {
-      const mm = gsap.matchMedia();
-
-      // Above the fold, so this runs on mount rather than on scroll.
-      mm.add("(prefers-reduced-motion: no-preference)", () => {
-        gsap.from("[data-hero-panel]", {
-          opacity: 0,
-          y: 18,
-          duration: 0.7,
-          ease: "power2.out",
-          stagger: 0.12,
-        });
-      });
-    },
-    { scope: heroRef },
-  );
-
   return (
-    <main
-      ref={heroRef}
-      className="mx-auto overflow-hidden px-4 py-12 md:px-8 md:py-14 lg:w-[clamp(960px,92vw,1380px)] lg:px-0 lg:pb-28 lg:pt-16"
-    >
+    <main className="mx-auto overflow-hidden px-4 py-12 md:px-8 md:py-14 lg:w-[clamp(960px,92vw,1380px)] lg:px-0 lg:pb-28 lg:pt-16">
       <div className="flex flex-col items-center lg:grid lg:[grid-template-columns:minmax(240px,340px)_minmax(420px,520px)_minmax(240px,340px)] lg:items-center lg:justify-center lg:gap-x-10 xl:gap-x-14">
-        <div
-          data-hero-panel
-          className="mb-10 max-w-[380px] text-center lg:mb-0 lg:w-full lg:max-w-[340px] lg:justify-self-end lg:text-right"
-        >
+        <div className="mb-10 max-w-[380px] text-center lg:mb-0 lg:w-full lg:max-w-[340px] lg:justify-self-end lg:text-right">
           <p className="mb-4 text-xs font-semibold uppercase text-muted-foreground">
             A personal listening journal
           </p>
@@ -68,17 +37,11 @@ function HeroSection() {
           </p>
         </div>
 
-        <div
-          data-hero-panel
-          className="mb-10 flex w-full max-w-[520px] justify-center lg:mb-0"
-        >
+        <div className="mb-10 flex w-full max-w-[520px] justify-center lg:mb-0">
           <VinylAlbumCarousel tracks={heroTracks} />
         </div>
 
-        <div
-          data-hero-panel
-          className="max-w-[380px] border-l-2 border-foreground/15 pl-6 lg:w-full lg:max-w-[340px]"
-        >
+        <div className="max-w-[380px] border-l-2 border-foreground/15 pl-6 lg:w-full lg:max-w-[340px]">
           <h2 className="mb-2 text-xs font-semibold uppercase leading-4 text-muted-foreground">
             A note from
           </h2>
