@@ -1,16 +1,39 @@
+import { useEffect, useState } from "react";
 import { mockPosts } from "../data/mockPosts";
+import { fetchPublishedPosts } from "../services/postsService";
 import VinylAlbumCarousel from "./VinylAlbumCarousel";
 
+const HERO_TRACK_COUNT = 6;
+
+function toHeroTrack({ id, artist, bestPick, image, spotifyUrl }) {
+  return { id, artist, bestPick, image, spotifyUrl };
+}
+
 function HeroSection() {
-  const heroTracks = mockPosts.map(
-    ({ id, artist, bestPick, image, spotifyUrl }) => ({
-      id,
-      artist,
-      bestPick,
-      image,
-      spotifyUrl,
-    }),
+  // Seeded with the mock data so there's something to show on first paint
+  // instead of an empty carousel while the real posts are still loading.
+  const [heroTracks, setHeroTracks] = useState(() =>
+    mockPosts.map(toHeroTrack),
   );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetchPublishedPosts({ limit: HERO_TRACK_COUNT })
+      .then((result) => {
+        if (cancelled || result.posts.length === 0) return;
+        setHeroTracks(result.posts.map(toHeroTrack));
+      })
+      .catch(() => {
+        // Real posts failed to load — the mock tracks already seeded above
+        // stay on screen, same offline-fallback pattern as the rest of the
+        // public pages.
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <main className="mx-auto overflow-hidden px-4 py-12 md:px-8 md:py-14 lg:w-[clamp(960px,92vw,1380px)] lg:px-0 lg:pb-28 lg:pt-16">
@@ -32,7 +55,8 @@ function HeroSection() {
             song from each of them that means the most to me.
           </p>
           <p className="mt-5 text-[13px] font-medium text-foreground">
-            06 artists&nbsp;&nbsp;·&nbsp;&nbsp;06
+            {String(heroTracks.length).padStart(2, "0")} artists&nbsp;&nbsp;
+            ·&nbsp;&nbsp;{String(heroTracks.length).padStart(2, "0")}
             songs&nbsp;&nbsp;·&nbsp;&nbsp;one best pick each
           </p>
         </div>
