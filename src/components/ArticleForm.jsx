@@ -227,16 +227,16 @@ function ArticleForm({
                 Content wherever you want it to appear.
               </p>
             </div>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <div className="flex h-20 w-32 shrink-0 items-center justify-center overflow-hidden rounded-md bg-[#EFEEEB]">
+            <div className="flex flex-col gap-4">
+              <div className="flex min-h-[160px] w-full max-w-md items-center justify-center overflow-hidden rounded-md bg-[#EFEEEB]">
                 {contentImageUrl ? (
                   <img
                     src={contentImageUrl}
                     alt=""
-                    className="h-full w-full object-cover"
+                    className="max-h-[400px] w-full object-contain"
                   />
                 ) : (
-                  <Image className="h-6 w-6 text-muted-foreground" />
+                  <Image className="h-8 w-8 text-muted-foreground" />
                 )}
               </div>
               <div className="flex flex-wrap items-center gap-2">
