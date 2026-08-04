@@ -31,8 +31,6 @@ function LatestArticles({ ctaSlot }) {
   const [keyword, setKeyword] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
 
-  const [useMockData, setUseMockData] = useState(false);
-
   const [categories, setCategories] = useState(mockCategories);
   const displayCategories = categories;
   const categoryKey = displayCategories.map((cat) => cat.name).join("|");
@@ -54,37 +52,29 @@ function LatestArticles({ ctaSlot }) {
   useEffect(() => {
     let cancelled = false;
 
-    const fetchPosts = () => {
-      if (useMockData) {
-        return Promise.resolve(
-          getMockPostsByCategory(selectedCategory, page, PAGE_SIZE),
+    // Always try the real API for this request first — a past failure
+    // shouldn't permanently pin the whole page to stale seed data. The mock
+    // fallback only covers *this* fetch if *this* fetch fails.
+    fetchPublishedPosts({
+      page,
+      limit: PAGE_SIZE,
+      category: selectedCategory,
+    })
+      .catch(() => getMockPostsByCategory(selectedCategory, page, PAGE_SIZE))
+      .then((result) => {
+        if (cancelled) return;
+
+        setPosts((prev) =>
+          page === 1 ? result.posts : [...prev, ...result.posts],
         );
-      }
-
-      return fetchPublishedPosts({
-        page,
-        limit: PAGE_SIZE,
-        category: selectedCategory,
-      }).catch(() => {
-        setUseMockData(true);
-        return getMockPostsByCategory(selectedCategory, page, PAGE_SIZE);
+        setHasMore(result.currentPage < result.totalPages);
+        setLoading(false);
       });
-    };
-
-    fetchPosts().then((result) => {
-      if (cancelled) return;
-
-      setPosts((prev) =>
-        page === 1 ? result.posts : [...prev, ...result.posts],
-      );
-      setHasMore(result.currentPage < result.totalPages);
-      setLoading(false);
-    });
 
     return () => {
       cancelled = true;
     };
-  }, [page, selectedCategory, useMockData]);
+  }, [page, selectedCategory]);
 
   const [searchResults, setSearchResults] = useState([]);
 
@@ -94,24 +84,17 @@ function LatestArticles({ ctaSlot }) {
 
     let cancelled = false;
 
-    const runSearch = () => {
-      if (useMockData) {
-        return Promise.resolve(searchMockPosts(trimmed));
-      }
-
-      return fetchPublishedPosts({ search: trimmed, limit: 10 })
-        .then((result) => result.posts)
-        .catch(() => searchMockPosts(trimmed));
-    };
-
-    runSearch().then((results) => {
-      if (!cancelled) setSearchResults(results);
-    });
+    fetchPublishedPosts({ search: trimmed, limit: 10 })
+      .then((result) => result.posts)
+      .catch(() => searchMockPosts(trimmed))
+      .then((results) => {
+        if (!cancelled) setSearchResults(results);
+      });
 
     return () => {
       cancelled = true;
     };
-  }, [keyword, useMockData]);
+  }, [keyword]);
 
   useLayoutEffect(() => {
     const updateIndicator = () => {
