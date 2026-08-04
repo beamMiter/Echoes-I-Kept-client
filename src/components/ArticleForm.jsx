@@ -1,6 +1,14 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import ReactMarkdown from 'react-markdown'
-import { ChevronDown, Eye, Image, ImagePlus, PenLine } from 'lucide-react'
+import {
+  Check,
+  ChevronDown,
+  Copy,
+  Eye,
+  Image,
+  ImagePlus,
+  PenLine,
+} from 'lucide-react'
 import FormSection from './FormSection'
 
 // Form state helpers live in ../utils/articleForm — keeping this file to a
@@ -20,28 +28,30 @@ function ArticleForm({
   onUploadContentImage,
   footer,
 }) {
-  const contentRef = useRef(null)
-  const [insertingImage, setInsertingImage] = useState(false)
   const [previewingContent, setPreviewingContent] = useState(false)
+  const [contentImageUrl, setContentImageUrl] = useState(null)
+  const [uploadingContentImage, setUploadingContentImage] = useState(false)
+  const [snippetCopied, setSnippetCopied] = useState(false)
 
-  const handleInsertContentImage = async (event) => {
+  const handleContentImageUpload = async (event) => {
     const file = event.target.files?.[0]
     event.target.value = ''
     if (!file || !onUploadContentImage) return
 
-    setInsertingImage(true)
+    setUploadingContentImage(true)
     try {
       const url = await onUploadContentImage(file)
-      const textarea = contentRef.current
-      const cursor = textarea ? textarea.selectionStart : form.content.length
-      const needsLeadingNewline = cursor > 0 && form.content[cursor - 1] !== '\n'
-      const markdown = `${needsLeadingNewline ? '\n' : ''}![](${url})\n`
-      const nextContent =
-        form.content.slice(0, cursor) + markdown + form.content.slice(cursor)
-      onChange('content', nextContent)
+      setContentImageUrl(url)
+      setSnippetCopied(false)
     } finally {
-      setInsertingImage(false)
+      setUploadingContentImage(false)
     }
+  }
+
+  const handleCopySnippet = async () => {
+    if (!contentImageUrl) return
+    await navigator.clipboard.writeText(`![](${contentImageUrl})`)
+    setSnippetCopied(true)
   }
 
   return (
@@ -206,6 +216,65 @@ function ArticleForm({
           )}
         </label>
 
+        {onUploadContentImage && (
+          <div className="flex flex-col gap-3">
+            <div>
+              <span className="text-sm font-medium text-muted-foreground">
+                Insert an image into content (optional)
+              </span>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Upload an image, then copy the snippet and paste it into
+                Content wherever you want it to appear.
+              </p>
+            </div>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <div className="flex h-20 w-32 shrink-0 items-center justify-center overflow-hidden rounded-md bg-[#EFEEEB]">
+                {contentImageUrl ? (
+                  <img
+                    src={contentImageUrl}
+                    alt=""
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <Image className="h-6 w-6 text-muted-foreground" />
+                )}
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <label className="inline-flex w-fit cursor-pointer items-center gap-1.5 rounded-md border border-foreground px-4 py-2 text-xs font-medium hover:border-muted-foreground hover:text-muted-foreground has-disabled:cursor-not-allowed has-disabled:opacity-60">
+                  <ImagePlus className="h-3.5 w-3.5" aria-hidden="true" />
+                  {uploadingContentImage ? 'Uploading...' : 'Upload image'}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="sr-only"
+                    disabled={uploadingContentImage}
+                    onChange={handleContentImageUpload}
+                  />
+                </label>
+                {contentImageUrl && (
+                  <button
+                    type="button"
+                    onClick={handleCopySnippet}
+                    className="inline-flex items-center gap-1.5 rounded-md border border-foreground px-4 py-2 text-xs font-medium hover:border-muted-foreground hover:text-muted-foreground"
+                  >
+                    {snippetCopied ? (
+                      <>
+                        <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                        Copied
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-3.5 w-3.5" aria-hidden="true" />
+                        Copy markdown
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between gap-3">
             <label
@@ -214,38 +283,23 @@ function ArticleForm({
             >
               Content
             </label>
-            <div className="flex items-center gap-2">
-              {onUploadContentImage && !previewingContent && (
-                <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-foreground px-3 py-1 text-xs font-medium hover:border-muted-foreground hover:text-muted-foreground has-disabled:cursor-not-allowed has-disabled:opacity-60">
-                  <ImagePlus className="h-3.5 w-3.5" aria-hidden="true" />
-                  {insertingImage ? 'Uploading...' : 'Insert image'}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="sr-only"
-                    disabled={insertingImage}
-                    onChange={handleInsertContentImage}
-                  />
-                </label>
+            <button
+              type="button"
+              onClick={() => setPreviewingContent((prev) => !prev)}
+              className="inline-flex items-center gap-1.5 rounded-md border border-foreground px-3 py-1 text-xs font-medium hover:border-muted-foreground hover:text-muted-foreground"
+            >
+              {previewingContent ? (
+                <>
+                  <PenLine className="h-3.5 w-3.5" aria-hidden="true" />
+                  Write
+                </>
+              ) : (
+                <>
+                  <Eye className="h-3.5 w-3.5" aria-hidden="true" />
+                  Preview
+                </>
               )}
-              <button
-                type="button"
-                onClick={() => setPreviewingContent((prev) => !prev)}
-                className="inline-flex items-center gap-1.5 rounded-md border border-foreground px-3 py-1 text-xs font-medium hover:border-muted-foreground hover:text-muted-foreground"
-              >
-                {previewingContent ? (
-                  <>
-                    <PenLine className="h-3.5 w-3.5" aria-hidden="true" />
-                    Write
-                  </>
-                ) : (
-                  <>
-                    <Eye className="h-3.5 w-3.5" aria-hidden="true" />
-                    Preview
-                  </>
-                )}
-              </button>
-            </div>
+            </button>
           </div>
           {previewingContent ? (
             <div className="markdown min-h-[420px] w-full rounded-sm border border-input bg-background px-3 py-3 font-sans text-[15px] leading-[1.55]">
@@ -260,7 +314,6 @@ function ArticleForm({
           ) : (
             <textarea
               id="article-content"
-              ref={contentRef}
               value={form.content}
               onChange={(event) => onChange('content', event.target.value)}
               className="min-h-[420px] w-full rounded-sm border border-input bg-background px-3 py-3 text-sm focus-visible:border-muted-foreground focus-visible:outline-none"
