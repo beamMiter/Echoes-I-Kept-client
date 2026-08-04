@@ -30,7 +30,7 @@ function WriteCta() {
         // full crossing runs -100 (its right edge at the button's left edge) to
         // 200 (its left edge at the button's right edge), plus a little margin
         // so the skewed corners never show.
-        gsap.fromTo(
+        const sheenTween = gsap.fromTo(
           '[data-cta-sheen]',
           { xPercent: -120 },
           {
@@ -49,7 +49,6 @@ function WriteCta() {
         const icon = containerRef.current.querySelector('[data-cta-icon]')
 
         const activate = () => {
-          gsap.to(button, { y: -2, duration: 0.25, ease: 'power2.out' })
           gsap.to(icon, {
             rotate: -18,
             x: -1,
@@ -57,10 +56,13 @@ function WriteCta() {
             duration: 0.3,
             ease: 'back.out(2.5)',
           })
+          // Restart (rather than let the ambient loop run its own timer) so
+          // hovering reliably shows a sweep instead of maybe catching the
+          // 9s gap between passes.
+          sheenTween.restart()
         }
 
         const reset = () => {
-          gsap.to(button, { y: 0, duration: 0.25, ease: 'power2.out' })
           gsap.to(icon, {
             rotate: 0,
             x: 0,
