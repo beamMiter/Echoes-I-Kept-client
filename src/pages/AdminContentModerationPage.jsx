@@ -8,6 +8,7 @@ import {
   getPendingArticles,
   rejectArticle,
 } from '../services/articleAdminService'
+import { buttonClassName } from '../utils/buttonStyles'
 
 function getErrorMessage(error, fallback) {
   return error.response?.data?.error || error.error || fallback
@@ -156,7 +157,7 @@ function AdminContentModerationPage() {
                       type="button"
                       onClick={() => handleApprove(article)}
                       disabled={submitting}
-                      className="rounded-md bg-foreground px-6 py-2 text-sm font-medium text-white hover:bg-muted-foreground disabled:cursor-not-allowed disabled:opacity-60"
+                      className={buttonClassName('primary')}
                     >
                       Approve
                     </button>
@@ -167,7 +168,7 @@ function AdminContentModerationPage() {
                         setRejectReason('')
                       }}
                       disabled={submitting}
-                      className="rounded-md border border-foreground px-6 py-2 text-sm font-medium hover:border-red-600 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-60"
+                      className={buttonClassName('dangerOutline')}
                     >
                       Reject
                     </button>

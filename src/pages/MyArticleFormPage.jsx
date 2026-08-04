@@ -13,6 +13,7 @@ import {
   validateArticleForm,
 } from '../utils/articleForm'
 import { getStatusMeta } from '../utils/postStatus'
+import { buttonClassName } from '../utils/buttonStyles'
 import { useAuth } from '../context/useAuth'
 import { fetchCategories } from '../services/categoriesService'
 import { uploadArticleImage } from '../services/articleAdminService'
@@ -210,7 +211,7 @@ function MyArticleFormPage() {
                 type="button"
                 onClick={() => handleSubmit('pending')}
                 disabled={submitting || uploading}
-                className="rounded-md bg-foreground px-8 py-2 text-sm font-medium text-white hover:bg-muted-foreground disabled:cursor-not-allowed disabled:opacity-60"
+                className={buttonClassName('primary')}
               >
                 {submitting ? 'Sending...' : 'Submit for review'}
               </button>
@@ -218,14 +219,14 @@ function MyArticleFormPage() {
                 type="button"
                 onClick={() => handleSubmit('draft')}
                 disabled={submitting || uploading}
-                className="rounded-md border border-foreground px-8 py-2 text-sm font-medium hover:border-muted-foreground hover:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-60"
+                className={buttonClassName('secondary')}
               >
                 Save as draft
               </button>
               <button
                 type="button"
                 onClick={() => navigate(-1)}
-                className="rounded-md border border-foreground px-8 py-2 text-sm font-medium hover:border-muted-foreground hover:text-muted-foreground"
+                className={buttonClassName('secondary')}
               >
                 Cancel
               </button>

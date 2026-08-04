@@ -11,6 +11,7 @@ import {
   updateAdminCategory,
 } from '../services/categoryAdminService'
 import { getAdminArticles } from '../services/articleAdminService'
+import { buttonClassName } from '../utils/buttonStyles'
 
 const emptyForm = {
   name: '',
@@ -179,7 +180,7 @@ function AdminCategoryManagementPage() {
             <button
               type="button"
               onClick={closeForm}
-              className="rounded-md border border-foreground px-8 py-2 text-sm font-medium hover:border-muted-foreground hover:text-muted-foreground"
+              className={buttonClassName('secondary')}
             >
               Cancel
             </button>
@@ -187,7 +188,7 @@ function AdminCategoryManagementPage() {
               type="button"
               onClick={submitCategory}
               disabled={submitting}
-              className="rounded-md bg-foreground px-8 py-2 text-sm font-medium text-white hover:bg-muted-foreground disabled:cursor-not-allowed disabled:opacity-60"
+              className={buttonClassName('primary')}
             >
               {submitting ? 'Saving...' : 'Save'}
             </button>
@@ -267,7 +268,7 @@ function AdminCategoryManagementPage() {
         <button
           type="button"
           onClick={openCreate}
-          className="inline-flex items-center gap-2 rounded-md bg-foreground px-8 py-2 text-sm font-medium text-white hover:bg-muted-foreground"
+          className={buttonClassName('primary')}
         >
           <Plus className="h-4 w-4" aria-hidden="true" />
           Create category
@@ -391,7 +392,7 @@ function DeleteCategoryDialog({ category, onCancel, onDelete, submitting }) {
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-md border border-foreground px-6 py-2 text-sm font-medium hover:border-muted-foreground hover:text-muted-foreground"
+            className={buttonClassName('secondary')}
           >
             Cancel
           </button>
@@ -399,7 +400,7 @@ function DeleteCategoryDialog({ category, onCancel, onDelete, submitting }) {
             type="button"
             onClick={onDelete}
             disabled={submitting}
-            className="rounded-md bg-foreground px-6 py-2 text-sm font-medium text-white hover:bg-muted-foreground disabled:cursor-not-allowed disabled:opacity-60"
+            className={buttonClassName('primary')}
           >
             {submitting ? 'Deleting...' : 'Delete'}
           </button>

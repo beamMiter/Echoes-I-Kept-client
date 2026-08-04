@@ -2,6 +2,7 @@ import { useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import { Check, ChevronDown, Copy, Eye, Image, PenLine } from 'lucide-react'
 import FormSection from './FormSection'
+import { buttonClassName } from '../utils/buttonStyles'
 
 // Form state helpers live in ../utils/articleForm — keeping this file to a
 // single component export is what the react-refresh lint rule requires.
@@ -64,7 +65,7 @@ function ArticleForm({
               <Image className="h-8 w-8 text-muted-foreground" />
             )}
           </div>
-          <label className="inline-flex w-fit cursor-pointer rounded-md border border-foreground px-8 py-2 text-sm font-medium hover:border-muted-foreground hover:text-muted-foreground has-disabled:cursor-not-allowed has-disabled:opacity-60">
+          <label className={buttonClassName('secondary', 'w-fit cursor-pointer has-disabled:cursor-not-allowed has-disabled:opacity-60')}>
             {uploading ? 'Uploading...' : 'Upload cover image'}
             <input
               type="file"
@@ -240,7 +241,7 @@ function ArticleForm({
                 </div>
               )}
               <div className="flex flex-wrap items-center gap-2">
-                <label className="inline-flex w-fit cursor-pointer rounded-md border border-foreground px-8 py-2 text-sm font-medium hover:border-muted-foreground hover:text-muted-foreground has-disabled:cursor-not-allowed has-disabled:opacity-60">
+                <label className={buttonClassName('secondary', 'w-fit cursor-pointer has-disabled:cursor-not-allowed has-disabled:opacity-60')}>
                   {uploadingContentImage
                     ? 'Uploading...'
                     : 'Upload in-content image'}
@@ -256,7 +257,7 @@ function ArticleForm({
                   <button
                     type="button"
                     onClick={handleCopySnippet}
-                    className="inline-flex items-center gap-1.5 rounded-md border border-foreground px-8 py-2 text-sm font-medium hover:border-muted-foreground hover:text-muted-foreground"
+                    className={buttonClassName('secondary')}
                   >
                     {snippetCopied ? (
                       <>

@@ -20,6 +20,7 @@ import {
   validateArticleForm,
 } from '../utils/articleForm'
 import { useAuth } from '../context/useAuth'
+import { buttonClassName } from '../utils/buttonStyles'
 
 const emptyForm = { ...emptyArticleForm, category: 'Pop' }
 
@@ -202,7 +203,7 @@ function AdminArticleManagementPage() {
             type="button"
             onClick={submitArticle}
             disabled={submitting || uploading}
-            className="rounded-md bg-foreground px-8 py-2 text-sm font-medium text-white hover:bg-muted-foreground disabled:cursor-not-allowed disabled:opacity-60"
+            className={buttonClassName('primary')}
           >
             {submitting ? 'Saving...' : isEditing ? 'Save' : 'Submit'}
           </button>
@@ -294,7 +295,7 @@ function AdminArticleManagementPage() {
         <button
           type="button"
           onClick={openCreate}
-          className="inline-flex items-center gap-2 rounded-md bg-foreground px-8 py-2 text-sm font-medium text-white hover:bg-muted-foreground"
+          className={buttonClassName('primary')}
         >
           <Plus className="h-4 w-4" aria-hidden="true" />
           Create article
