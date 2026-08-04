@@ -41,7 +41,7 @@ function AdminLayout({ actions, children, title }) {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="flex min-h-screen">
-        <aside className="hidden w-[208px] shrink-0 flex-col bg-[#EFEEEB] lg:flex">
+        <aside className="hidden w-64 shrink-0 flex-col bg-[#EFEEEB] lg:flex">
           <AdminSidebarContent onLogout={handleLogout} />
         </aside>
 
