@@ -113,7 +113,7 @@ function AdminLayout({ actions, children, title }) {
 function AdminSidebarContent({ onLinkClick, onLogout }) {
   return (
     <>
-      <div className="px-6 pb-8 pt-12">
+      <div className="px-6 pb-8 pt-6">
         <Link to="/" onClick={onLinkClick} className="flex items-center gap-2">
           <img src="/svg/listening-to-music.svg" alt="" className="h-9 w-9" />
           <span className="text-lg font-bold leading-none tracking-tight">
