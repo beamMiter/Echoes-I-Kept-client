@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { useParams } from "react-router-dom";
 import { FileQuestion, ImageOff } from "lucide-react";
@@ -9,14 +9,9 @@ import AuthorSidebar from "../components/AuthorSidebar";
 import ArticleLikeShare from "../components/ArticleLikeShare";
 import ArticleComments from "../components/ArticleComments";
 import AuthRequiredDialog from "../components/ui/AuthRequiredDialog";
-import {
-  getMockPostById,
-  getMockLikesAmount,
-  getMockCommentsByPostId,
-  getPostHeroImage,
-  getPostHeroImagePosition,
-} from "../data/mockPosts";
 import { fetchPublishedPostById } from "../services/postsService";
+import { fetchComments, createComment } from "../services/commentsService";
+import { likePost, unlikePost } from "../services/likesService";
 import { useAuth } from "../context/useAuth";
 import { getCategoryTextStyles } from "../utils/categoryStyles";
 
@@ -28,42 +23,39 @@ function preventImageDrag(e) {
 
 function PostDetailPage() {
   const { postId } = useParams();
-  const detailImageSource = useMemo(() => getMockPostById(postId), [postId]);
 
   return (
     <div className={pageShellClassName} onDragStart={preventImageDrag}>
       <Navbar />
-      <PostDetailBody
-        key={postId}
-        postId={postId}
-        detailImageSource={detailImageSource}
-      />
+      <PostDetailBody key={postId} postId={postId} />
       <Footer />
     </div>
   );
 }
 
-function PostDetailBody({ postId, detailImageSource }) {
+function PostDetailBody({ postId }) {
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
 
-    const resolvePost = () => {
-      return fetchPublishedPostById(postId).catch(() => detailImageSource);
-    };
-
-    resolvePost().then((result) => {
-      if (cancelled) return;
-      setPost(result);
-      setLoading(false);
-    });
+    fetchPublishedPostById(postId)
+      .then((result) => {
+        if (cancelled) return;
+        setPost(result);
+      })
+      .catch(() => {
+        if (!cancelled) setPost(null);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
 
     return () => {
       cancelled = true;
     };
-  }, [postId, detailImageSource]);
+  }, [postId]);
 
   if (loading) {
     return (
@@ -92,28 +84,32 @@ function PostDetailBody({ postId, detailImageSource }) {
     );
   }
 
-  return (
-    <PostDetailContent
-      post={post}
-      postId={postId}
-      detailImageSource={detailImageSource}
-    />
-  );
+  return <PostDetailContent post={post} postId={postId} />;
 }
 
-function PostDetailContent({ post, postId, detailImageSource }) {
-  const { state, isAuthenticated } = useAuth();
+function PostDetailContent({ post, postId }) {
+  const { isAuthenticated } = useAuth();
   const content = post.content || "";
-  const currentUser = state.user;
-  const [likesAmount, setLikesAmount] = useState(() =>
-    getMockLikesAmount(postId),
-  );
-  const [comments, setComments] = useState(() =>
-    getMockCommentsByPostId(postId),
-  );
+  const [likesAmount, setLikesAmount] = useState(post.likesCount || 0);
+  const [liked, setLiked] = useState(Boolean(post.likedByMe));
+  const [comments, setComments] = useState([]);
   const [loadedHeroImage, setLoadedHeroImage] = useState(null);
   const [erroredHeroImage, setErroredHeroImage] = useState(null);
   const [loginDialogOpen, setLoginDialogOpen] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetchComments(postId)
+      .then((result) => {
+        if (!cancelled) setComments(result);
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [postId]);
 
   const requireLogin = () => {
     if (isAuthenticated) return true;
@@ -122,29 +118,39 @@ function PostDetailContent({ post, postId, detailImageSource }) {
     return false;
   };
 
-  const handleLike = () => {
+  const handleLike = async () => {
     if (!requireLogin()) return;
 
-    setLikesAmount((prev) => prev + 1);
+    const nextLiked = !liked;
+    setLiked(nextLiked);
+    setLikesAmount((prev) => prev + (nextLiked ? 1 : -1));
+
+    try {
+      const result = nextLiked
+        ? await likePost(postId)
+        : await unlikePost(postId);
+      setLikesAmount(result.likesCount);
+      setLiked(result.liked);
+    } catch {
+      // Roll back the optimistic update — most likely cause is the like
+      // state on the server already matched what we were toggling away
+      // from (e.g. a second tab), so re-syncing beats leaving a wrong count.
+      setLiked(!nextLiked);
+      setLikesAmount((prev) => prev + (nextLiked ? -1 : 1));
+    }
   };
 
-  const handleAddComment = (text) => {
+  const handleAddComment = async (text) => {
     if (!requireLogin()) return false;
 
-    const newComment = {
-      id: Date.now(),
-      name: currentUser?.name || "You",
-      profile_pic: currentUser?.profilePic || "/author-image.jpeg",
-      comment_text: text,
-      created_at: new Date().toISOString(),
-    };
-    setComments((prev) => [newComment, ...prev]);
+    const comment = await createComment(postId, text);
+    setComments((prev) => [comment, ...prev]);
     return true;
   };
 
   const dateString = post.date;
-  const heroImage = getPostHeroImage(post, detailImageSource);
-  const heroImagePosition = getPostHeroImagePosition(post, detailImageSource);
+  const heroImage = post.detailImage || post.image || "";
+  const heroImagePosition = post.detailImagePosition || "center";
   const heroImageLoaded = loadedHeroImage === heroImage;
   const heroImageErrored = erroredHeroImage === heroImage;
   const author = {
@@ -221,7 +227,11 @@ function PostDetailContent({ post, postId, detailImageSource }) {
                 <AuthorSidebar {...author} />
               </div>
 
-              <ArticleLikeShare likesAmount={likesAmount} onLike={handleLike} />
+              <ArticleLikeShare
+                likesAmount={likesAmount}
+                liked={liked}
+                onLike={handleLike}
+              />
 
               <ArticleComments
                 comments={comments}

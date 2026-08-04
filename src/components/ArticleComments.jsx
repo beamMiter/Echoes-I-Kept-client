@@ -17,23 +17,30 @@ function formatCommentDate(dateString) {
 
 function ArticleComments({ comments = [], onAddComment }) {
   const [commentText, setCommentText] = useState('')
-  const [error, setError] = useState(false)
+  const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
   const hasComments = comments.length > 0
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
 
     if (!commentText.trim()) {
-      setError(true)
+      setError('Please type something before sending.')
       return
     }
 
-    setError(false)
-    const added = onAddComment(commentText.trim())
+    setError('')
+    setSubmitting(true)
+    try {
+      const added = await onAddComment(commentText.trim())
+      if (added === false) return
 
-    if (added === false) return
-
-    setCommentText('')
+      setCommentText('')
+    } catch {
+      setError('Unable to post your comment. Please try again.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -46,7 +53,7 @@ function ArticleComments({ comments = [], onAddComment }) {
             value={commentText}
             onChange={(e) => {
               setCommentText(e.target.value)
-              setError(false)
+              setError('')
             }}
             placeholder="What are your thoughts?"
             className={`w-full p-4 h-24 resize-none py-3 rounded-sm border border-input bg-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-muted-foreground ${
@@ -54,16 +61,15 @@ function ArticleComments({ comments = [], onAddComment }) {
             }`}
           />
           {error && (
-            <p className="text-red-500 text-sm absolute">
-              Please type something before sending.
-            </p>
+            <p className="text-red-500 text-sm absolute">{error}</p>
           )}
           <div className="flex justify-end">
             <button
               type="submit"
-              className="px-8 py-2 bg-foreground text-white rounded-md hover:bg-muted-foreground transition-colors"
+              disabled={submitting}
+              className="px-8 py-2 bg-foreground text-white rounded-md hover:bg-muted-foreground transition-colors disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Send
+              {submitting ? 'Sending...' : 'Send'}
             </button>
           </div>
         </form>
@@ -76,8 +82,8 @@ function ArticleComments({ comments = [], onAddComment }) {
               <div className="flex space-x-4">
                 <div className="shrink-0">
                   <img
-                    src={comment.profile_pic || '/author-image.jpeg'}
-                    alt={comment.name || 'Comment author'}
+                    src={comment.authorAvatar || '/author-image.jpeg'}
+                    alt={comment.authorName || 'Comment author'}
                     draggable={false}
                     className="rounded-full w-12 h-12 object-cover"
                   />
@@ -85,17 +91,17 @@ function ArticleComments({ comments = [], onAddComment }) {
                 <div className="flex-grow">
                   <div className="flex flex-col items-start justify-between">
                     <h4 className="font-semibold">
-                      {comment.name || 'Anonymous'}
+                      {comment.authorName || 'Anonymous'}
                     </h4>
-                    {comment.created_at && (
+                    {comment.createdAt && (
                       <span className="text-sm text-gray-500">
-                        {formatCommentDate(comment.created_at)}
+                        {formatCommentDate(comment.createdAt)}
                       </span>
                     )}
                   </div>
                 </div>
               </div>
-              <p className="text-gray-600">{comment.comment_text}</p>
+              <p className="text-gray-600">{comment.commentText}</p>
               {index < comments.length - 1 && (
                 <hr className="border-gray-300 my-4" />
               )}
