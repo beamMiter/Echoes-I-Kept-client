@@ -68,7 +68,11 @@ function AdminLayout({ actions, children, title }) {
           </div>
 
           <header className="flex min-h-16 flex-col gap-3 border-b border-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between md:px-10 lg:px-12">
-            <h1 className="text-xl font-bold sm:text-2xl">{title}</h1>
+            {/* Same type treatment as the sidebar title (which mirrors the
+                public navbar's brand): 2xl at weight 500, not bold. */}
+            <h1 className="text-xl font-medium tracking-tight sm:text-2xl">
+              {title}
+            </h1>
             {actions && (
               <div className="flex flex-wrap items-center gap-2">{actions}</div>
             )}
