@@ -59,7 +59,7 @@ function ArticleForm({
   }
 
   return (
-    <div className="space-y-8 rounded-lg border border-border bg-white p-6 shadow-sm md:p-8">
+    <div className="space-y-8">
       <FormSection
         title="Cover image"
         description="The thumbnail readers see on the homepage and article cards."

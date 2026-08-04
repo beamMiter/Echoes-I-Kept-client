@@ -140,7 +140,7 @@ function MyArticleFormPage() {
   return (
     <div className="flex min-h-screen flex-col">
       <Navbar />
-      <main className="mx-auto w-full max-w-[900px] flex-1 px-4 py-10 sm:px-6 md:py-14">
+      <main className="mx-auto w-full max-w-[1100px] flex-1 px-4 py-10 sm:px-6 md:py-14">
         <div className="mb-8">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-3">
@@ -193,7 +193,7 @@ function MyArticleFormPage() {
         {loading ? (
           <LoadingSpinner />
         ) : (
-          <form className="max-w-[760px]" onSubmit={(event) => event.preventDefault()}>
+          <form className="w-full" onSubmit={(event) => event.preventDefault()}>
             <ArticleForm
               form={form}
               errors={errors}
