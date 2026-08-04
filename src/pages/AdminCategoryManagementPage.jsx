@@ -241,9 +241,12 @@ function AdminCategoryManagementPage() {
               </button>
               {Boolean(usageByCategory[editingCategory.name]) && (
                 <p className="mt-1.5 text-xs text-muted-foreground">
-                  Used by {usageByCategory[editingCategory.name]} article
-                  {usageByCategory[editingCategory.name] === 1 ? '' : 's'} — reassign
-                  them to another category before deleting this one.
+                  Used by{' '}
+                  <span className="font-semibold text-red-600">
+                    {usageByCategory[editingCategory.name]}
+                  </span>{' '}
+                  article{usageByCategory[editingCategory.name] === 1 ? '' : 's'} —
+                  reassign them to another category before deleting this one.
                 </p>
               )}
             </div>
