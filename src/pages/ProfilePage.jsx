@@ -10,7 +10,18 @@ function getProfileForm(user) {
     username: user?.username || '',
     email: user?.email || '',
     profilePic: user?.profilePic || '',
+    // Stored as one paragraph per array entry (matches posts.author_bio,
+    // which this gets snapshotted into on post creation) — a blank line in
+    // the textarea is how an author splits their bio into paragraphs.
+    bio: (user?.bio || []).join('\n\n'),
   }
+}
+
+function bioTextToParagraphs(text) {
+  return text
+    .split(/\n\s*\n/)
+    .map((paragraph) => paragraph.replace(/\s+/g, ' ').trim())
+    .filter(Boolean)
 }
 
 function ProfilePage() {
@@ -63,6 +74,7 @@ function ProfilePage() {
       username: form.username.trim(),
       email: form.email.trim(),
       profilePic: form.profilePic.trim(),
+      bio: bioTextToParagraphs(form.bio),
     })
 
     if (result?.error) {
@@ -163,6 +175,24 @@ function ProfilePage() {
             {errors.email && (
               <span className="text-xs text-red-500">{errors.email}</span>
             )}
+          </label>
+
+          <label className="block space-y-1 md:space-y-2">
+            <span className="text-xs font-medium text-muted-foreground">
+              Bio
+            </span>
+            <textarea
+              value={form.bio}
+              onChange={(e) => updateField('bio', e.target.value)}
+              disabled={state.loading}
+              placeholder="Tell readers what you write about. Leave a blank line between paragraphs."
+              className="min-h-28 w-full rounded-sm border border-input bg-background px-3 py-3 text-sm focus-visible:border-muted-foreground focus-visible:outline-none"
+            />
+            <span className="block text-xs text-muted-foreground">
+              Shown on your articles' author card. New posts snapshot this
+              when they're created — editing your bio later won't change
+              posts you already wrote.
+            </span>
           </label>
         </div>
 
