@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import ReactMarkdown from 'react-markdown'
-import { Check, ChevronDown, Copy, Eye, Image, PenLine } from 'lucide-react'
+import { ChevronDown, Eye, Image, PenLine } from 'lucide-react'
 import FormSection from './FormSection'
 import { buttonClassName } from '../utils/buttonStyles'
 
@@ -16,46 +16,13 @@ function ArticleForm({
   categories = [],
   authorName,
   uploading = false,
+  uploadingDetailImage = false,
   onChange,
   onImageUpload,
-  onUploadContentImage,
+  onDetailImageUpload,
   footer,
 }) {
   const [previewingContent, setPreviewingContent] = useState(false)
-  const [contentImageUrl, setContentImageUrl] = useState(null)
-  const [uploadingContentImage, setUploadingContentImage] = useState(false)
-  const [snippetCopied, setSnippetCopied] = useState(false)
-
-  const handleContentImageUpload = async (event) => {
-    const file = event.target.files?.[0]
-    event.target.value = ''
-    if (!file || !onUploadContentImage) return
-
-    setUploadingContentImage(true)
-    try {
-      const url = await onUploadContentImage(file)
-      setContentImageUrl(url)
-      setSnippetCopied(false)
-
-      // Append to content immediately — this used to require copying the
-      // snippet and pasting it in by hand, and a saved draft would silently
-      // drop the image if that manual step never happened (the upload only
-      // lived in this component's local state, never in form.content).
-      // Auto-inserting means the upload alone is enough to persist it, same
-      // as the cover image above.
-      const needsLeadingNewline = form.content && !form.content.endsWith('\n')
-      const markdown = `${needsLeadingNewline ? '\n\n' : ''}![](${url})\n`
-      onChange('content', form.content + markdown)
-    } finally {
-      setUploadingContentImage(false)
-    }
-  }
-
-  const handleCopySnippet = async () => {
-    if (!contentImageUrl) return
-    await navigator.clipboard.writeText(`![](${contentImageUrl})`)
-    setSnippetCopied(true)
-  }
 
   return (
     <div className="space-y-8">
@@ -88,6 +55,40 @@ function ArticleForm({
         </div>
         {errors.image && (
           <span className="block text-xs text-red-500">{errors.image}</span>
+        )}
+      </FormSection>
+
+      <div className="border-t border-border" />
+
+      <FormSection
+        title="Wallpaper image"
+        description="The full-width banner shown at the top of the article page. Optional — falls back to the cover image above if left empty."
+      >
+        <div className="flex flex-col gap-4">
+          <div className="flex aspect-[1.65/1] w-full max-w-[500px] items-center justify-center overflow-hidden rounded-md bg-[#EFEEEB]">
+            {form.detailImage ? (
+              <img
+                src={form.detailImage}
+                alt="Wallpaper preview"
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <Image className="h-8 w-8 text-muted-foreground" />
+            )}
+          </div>
+          <label className={buttonClassName('secondary', 'w-fit cursor-pointer has-disabled:cursor-not-allowed has-disabled:opacity-60')}>
+            {uploadingDetailImage ? 'Uploading...' : 'Upload wallpaper image'}
+            <input
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              disabled={uploadingDetailImage}
+              onChange={onDetailImageUpload}
+            />
+          </label>
+        </div>
+        {errors.detailImage && (
+          <span className="block text-xs text-red-500">{errors.detailImage}</span>
         )}
       </FormSection>
 
@@ -218,75 +219,6 @@ function ArticleForm({
             <span className="text-xs text-red-500">{errors.description}</span>
           )}
         </label>
-
-        {onUploadContentImage && (
-          <div className="flex flex-col gap-3">
-            <div>
-              <span className="text-sm font-medium text-muted-foreground">
-                In-content image (optional)
-              </span>
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                A picture that sits inside the article body, between
-                paragraphs — not the cover image above. Uploading adds it to
-                the end of Content automatically; use Copy markdown if you
-                want to move it somewhere else in the text. Repeat for as
-                many as you need.
-              </p>
-            </div>
-            <div className="flex flex-col items-start gap-4">
-              {contentImageUrl ? (
-                // The img carries no width/height class, so the browser draws
-                // it at its raw pixel size. `self-start` is what actually
-                // makes the wrapper shrink-wrap: this is a flex item, and a
-                // flex item is blockified (inline-block is ignored) and
-                // stretched to full width by default — that stretch was
-                // leaving a filled gap beside anything narrower than the form.
-                <div className="max-h-[600px] max-w-full self-start overflow-auto rounded-md border border-border">
-                  <img src={contentImageUrl} alt="" className="block" />
-                </div>
-              ) : (
-                // Nothing uploaded yet, so there's no "real size" to match —
-                // use the same placeholder shape as the cover image above.
-                <div className="flex aspect-[1.65/1] w-full max-w-[500px] items-center justify-center overflow-hidden rounded-md bg-[#EFEEEB]">
-                  <Image className="h-8 w-8 text-muted-foreground" />
-                </div>
-              )}
-              <div className="flex flex-wrap items-center gap-2">
-                <label className={buttonClassName('secondary', 'w-fit cursor-pointer has-disabled:cursor-not-allowed has-disabled:opacity-60')}>
-                  {uploadingContentImage
-                    ? 'Uploading...'
-                    : 'Upload in-content image'}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="sr-only"
-                    disabled={uploadingContentImage}
-                    onChange={handleContentImageUpload}
-                  />
-                </label>
-                {contentImageUrl && (
-                  <button
-                    type="button"
-                    onClick={handleCopySnippet}
-                    className={buttonClassName('secondary')}
-                  >
-                    {snippetCopied ? (
-                      <>
-                        <Check className="h-4 w-4" aria-hidden="true" />
-                        Copied
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="h-4 w-4" aria-hidden="true" />
-                        Copy markdown
-                      </>
-                    )}
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
 
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between gap-3">
