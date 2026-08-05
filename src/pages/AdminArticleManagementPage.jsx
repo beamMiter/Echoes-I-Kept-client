@@ -35,6 +35,7 @@ function AdminArticleManagementPage() {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [uploadingDetailImage, setUploadingDetailImage] = useState(false)
   const [view, setView] = useState('list')
   const [form, setForm] = useState(emptyForm)
   const [status, setStatus] = useState('pending')
@@ -192,6 +193,21 @@ function AdminArticleManagementPage() {
     }
   }
 
+  const handleDetailImageUpload = async (event) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    setUploadingDetailImage(true)
+    try {
+      const url = await uploadArticleImage(file)
+      updateForm('detailImage', url)
+    } catch (error) {
+      setApiError(getErrorMessage(error, 'Unable to upload image.'))
+    } finally {
+      setUploadingDetailImage(false)
+    }
+  }
+
   if (view === 'form') {
     const isEditing = Boolean(editingArticle)
 
@@ -222,9 +238,10 @@ function AdminArticleManagementPage() {
             categories={categories}
             authorName={state.user?.name || ''}
             uploading={uploading}
+            uploadingDetailImage={uploadingDetailImage}
             onChange={updateForm}
             onImageUpload={handleImageUpload}
-            onUploadContentImage={uploadArticleImage}
+            onDetailImageUpload={handleDetailImageUpload}
             footer={
               isEditing && (
                 <label className="flex flex-col gap-2">

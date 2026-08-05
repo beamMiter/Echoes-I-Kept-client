@@ -37,6 +37,7 @@ export async function submitArticle(form, status = 'pending') {
     const { data } = await apiClient.post('/api/posts', {
       category: form.category,
       image: form.image,
+      detailImage: form.detailImage || null,
       title: form.title,
       description: form.description,
       content: form.content,
@@ -56,6 +57,7 @@ export async function updateMyArticle(id, form, status) {
     const { data } = await apiClient.put(`/api/posts/${id}`, {
       category: form.category,
       image: form.image,
+      detailImage: form.detailImage || null,
       title: form.title,
       description: form.description,
       content: form.content,

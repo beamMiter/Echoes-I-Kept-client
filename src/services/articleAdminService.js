@@ -17,6 +17,7 @@ export async function createAdminArticle(form, status) {
     const { data } = await apiClient.post('/api/posts', {
       category: form.category,
       image: form.image,
+      detailImage: form.detailImage || null,
       title: form.title,
       description: form.description,
       content: form.content,
@@ -36,6 +37,7 @@ export async function updateAdminArticle(article, form, status) {
     const { data } = await apiClient.put(`/api/posts/${article.id}`, {
       category: form.category,
       image: form.image,
+      detailImage: form.detailImage || null,
       title: form.title,
       description: form.description,
       content: form.content,
