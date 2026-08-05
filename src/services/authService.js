@@ -36,7 +36,10 @@ function persistSession({ accessToken, refreshToken, user }) {
   cacheUser(user)
 }
 
-export async function signup({ name, username, email, password }, { persist = true } = {}) {
+// Signup no longer returns a session — the server requires the account's
+// email to be verified (via a 6-digit code) before any login is allowed, so
+// there's nothing to persist here anymore.
+export async function signup({ name, username, email, password }) {
   try {
     const { firstName, lastName } = splitName(name)
     const { data } = await apiClient.post('/api/auth/signup', {
@@ -47,12 +50,7 @@ export async function signup({ name, username, email, password }, { persist = tr
       password,
     })
 
-    const user = toDisplayUser(data.data)
-    if (persist) {
-      persistSession({ accessToken: data.accessToken, refreshToken: data.refreshToken, user })
-    }
-
-    return { user }
+    return { user: toDisplayUser(data.data) }
   } catch (error) {
     throw normalizeApiError(error)
   }
@@ -61,6 +59,53 @@ export async function signup({ name, username, email, password }, { persist = tr
 export async function login({ email, password, role }) {
   try {
     const { data } = await apiClient.post('/api/auth/login', { email, password, role })
+    const user = toDisplayUser(data.data)
+    persistSession({ accessToken: data.accessToken, refreshToken: data.refreshToken, user })
+
+    return { user }
+  } catch (error) {
+    throw normalizeApiError(error)
+  }
+}
+
+export async function verifyEmail({ email, code }) {
+  try {
+    const { data } = await apiClient.post('/api/auth/verify-email', { email, code })
+    const user = toDisplayUser(data.data)
+    persistSession({ accessToken: data.accessToken, refreshToken: data.refreshToken, user })
+
+    return { user }
+  } catch (error) {
+    throw normalizeApiError(error)
+  }
+}
+
+export async function resendVerificationCode({ email }) {
+  try {
+    await apiClient.post('/api/auth/resend-verification-code', { email })
+  } catch (error) {
+    throw normalizeApiError(error)
+  }
+}
+
+// Always "succeeds" from the caller's perspective — the server never
+// reveals whether the email belongs to a real account, so there's nothing
+// for this to branch on beyond a hard network/server failure.
+export async function forgotPassword({ email }) {
+  try {
+    await apiClient.post('/api/auth/forgot-password', { email })
+  } catch (error) {
+    throw normalizeApiError(error)
+  }
+}
+
+export async function resetPasswordWithCode({ email, code, newPassword }) {
+  try {
+    const { data } = await apiClient.post('/api/auth/reset-password-with-code', {
+      email,
+      code,
+      newPassword,
+    })
     const user = toDisplayUser(data.data)
     persistSession({ accessToken: data.accessToken, refreshToken: data.refreshToken, user })
 
