@@ -34,27 +34,75 @@ export function AuthProvider({ children }) {
     } catch (err) {
       const message = err.response?.data?.error || 'Login failed'
       setState((prev) => ({ ...prev, loading: false, error: message }))
-      return { error: message }
+      return { error: message, code: err.code }
     }
   }
 
-  const signup = async (data, options = {}) => {
-    const shouldAutoLogin = options.autoLogin !== false
-
+  // Never logs the user in — the server requires email verification first,
+  // so there's no session to persist yet. The caller (AuthPage) sends them
+  // to the verify-code step next.
+  const signup = async (data) => {
     try {
       setState((prev) => ({ ...prev, loading: true, error: null }))
-      const result = await authService.signup(data, { persist: shouldAutoLogin })
-      setState((prev) => ({
-        ...prev,
-        user: shouldAutoLogin ? result.user : prev.user,
-        loading: false,
-        error: null,
-      }))
+      const result = await authService.signup(data)
+      setState((prev) => ({ ...prev, loading: false, error: null }))
       return { user: result.user }
     } catch (err) {
       const message = err.response?.data?.error || 'Sign up failed'
       setState((prev) => ({ ...prev, loading: false, error: message }))
       return { error: message }
+    }
+  }
+
+  const verifyEmail = async (payload) => {
+    try {
+      setState((prev) => ({ ...prev, loading: true, error: null }))
+      const result = await authService.verifyEmail(payload)
+      setState((prev) => ({ ...prev, user: result.user, loading: false, error: null }))
+      return { user: result.user }
+    } catch (err) {
+      const message = err.response?.data?.error || 'Verification failed'
+      setState((prev) => ({ ...prev, loading: false, error: message }))
+      return { error: message, code: err.code }
+    }
+  }
+
+  const resendVerificationCode = async (payload) => {
+    try {
+      setState((prev) => ({ ...prev, loading: true, error: null }))
+      await authService.resendVerificationCode(payload)
+      setState((prev) => ({ ...prev, loading: false, error: null }))
+      return null
+    } catch (err) {
+      const message = err.response?.data?.error || 'Unable to resend code'
+      setState((prev) => ({ ...prev, loading: false, error: message }))
+      return { error: message }
+    }
+  }
+
+  const forgotPassword = async (payload) => {
+    try {
+      setState((prev) => ({ ...prev, loading: true, error: null }))
+      await authService.forgotPassword(payload)
+      setState((prev) => ({ ...prev, loading: false, error: null }))
+      return null
+    } catch (err) {
+      const message = err.response?.data?.error || 'Unable to request a reset code'
+      setState((prev) => ({ ...prev, loading: false, error: message }))
+      return { error: message }
+    }
+  }
+
+  const resetPasswordWithCode = async (payload) => {
+    try {
+      setState((prev) => ({ ...prev, loading: true, error: null }))
+      const result = await authService.resetPasswordWithCode(payload)
+      setState((prev) => ({ ...prev, user: result.user, loading: false, error: null }))
+      return { user: result.user }
+    } catch (err) {
+      const message = err.response?.data?.error || 'Unable to reset your password'
+      setState((prev) => ({ ...prev, loading: false, error: message }))
+      return { error: message, code: err.code }
     }
   }
 
@@ -101,6 +149,10 @@ export function AuthProvider({ children }) {
         state,
         login,
         signup,
+        verifyEmail,
+        resendVerificationCode,
+        forgotPassword,
+        resetPasswordWithCode,
         updateProfile,
         resetPassword,
         logout,

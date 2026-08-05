@@ -1,18 +1,12 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import {
-  AtSign,
-  CheckCircle2,
-  Loader2,
-  LockKeyhole,
-  Mail,
-  User,
-} from "lucide-react";
+import { AtSign, Loader2, LockKeyhole, Mail, User } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { getPasswordStrengthError } from "../utils/passwordValidation";
 import { useAuth } from "../context/useAuth";
+import { setPendingVerification } from "../utils/verifyCodeSession";
 
 const emptyForm = {
   name: "",
@@ -144,23 +138,17 @@ function GoogleAuthButton() {
 function AuthPage() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { login, signup, state } = useAuth();
+  const { login, signup, forgotPassword, state } = useAuth();
   const mode = modeByPath[location.pathname] || "login";
   const [form, setForm] = useState(emptyForm);
   const [errors, setErrors] = useState({});
   const [apiError, setApiError] = useState("");
-  const [resetRequested, setResetRequested] = useState(false);
-  const [signupComplete, setSignupComplete] = useState(false);
-  const [pendingSignup, setPendingSignup] = useState(null);
 
   const switchMode = (nextMode) => {
     const nextPath = pathByMode[nextMode] || "/login";
     setForm(emptyForm);
     setErrors({});
     setApiError("");
-    setResetRequested(false);
-    setSignupComplete(false);
-    setPendingSignup(null);
     if (location.pathname !== nextPath) navigate(nextPath);
   };
 
@@ -206,6 +194,14 @@ function AuthPage() {
     if (Object.keys(nextErrors).length) return;
 
     const result = await login({ email: form.email, password: form.password });
+    if (result?.code === "EMAIL_NOT_VERIFIED") {
+      setPendingVerification({
+        email: form.email.trim().toLowerCase(),
+        purpose: "signup_verify",
+      });
+      navigate("/verify-code");
+      return;
+    }
     if (result?.error) {
       setApiError(result.error);
       toast.error("Unable to log in", {
@@ -225,15 +221,12 @@ function AuthPage() {
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) return;
 
-    const result = await signup(
-      {
-        name: form.name,
-        username: form.username,
-        email: form.email,
-        password: form.password,
-      },
-      { autoLogin: false },
-    );
+    const result = await signup({
+      name: form.name,
+      username: form.username,
+      email: form.email,
+      password: form.password,
+    });
     if (result?.error) {
       setApiError(result.error);
       toast.error("Unable to create account", {
@@ -241,17 +234,18 @@ function AuthPage() {
       });
       return;
     }
-    setPendingSignup({
+
+    setPendingVerification({
       email: form.email.trim().toLowerCase(),
-      password: form.password,
+      purpose: "signup_verify",
     });
-    setSignupComplete(true);
     toast.success("Account created", {
-      description: "Your listening journal is ready.",
+      description: "Enter the code we sent you to finish setting up.",
     });
+    navigate("/verify-code");
   };
 
-  const handleForgotPassword = (event) => {
+  const handleForgotPassword = async (event) => {
     event.preventDefault();
     const nextErrors = {};
     if (!form.email.trim()) nextErrors.email = "Email is required.";
@@ -259,30 +253,25 @@ function AuthPage() {
       nextErrors.email = "Please enter a valid email address.";
     }
     setErrors(nextErrors);
-    if (!Object.keys(nextErrors).length) {
-      setResetRequested(true);
-      toast.success("Reset link requested", {
-        description: "If an account exists, reset instructions will be sent there.",
-      });
-    }
-  };
+    if (Object.keys(nextErrors).length) return;
 
-  const handleContinueAfterSignup = async () => {
-    if (!pendingSignup) {
-      navigate("/");
-      return;
-    }
-
-    const result = await login(pendingSignup);
+    const email = form.email.trim().toLowerCase();
+    // Always "succeeds" — the server never reveals whether the account
+    // exists, so there's nothing here to branch on beyond a hard failure.
+    const result = await forgotPassword({ email });
     if (result?.error) {
       setApiError(result.error);
-      toast.error("Unable to continue", {
+      toast.error("Unable to request a code", {
         description: result.error,
       });
       return;
     }
 
-    navigate("/");
+    setPendingVerification({ email, purpose: "password_reset" });
+    toast.success("Check your inbox", {
+      description: "If an account exists, a code was sent there.",
+    });
+    navigate("/verify-code");
   };
 
   const isRegister = mode === "register";
@@ -307,55 +296,39 @@ function AuthPage() {
                   </p>
                 </div>
 
-                {resetRequested ? (
-                  <div className="mt-10 text-center">
-                    <p className="text-xl font-semibold">Check your inbox</p>
-                    <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-black/55">
-                      If an account exists for {form.email}, reset instructions
-                      will be sent there.
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => switchMode("login")}
-                      className="mt-6 text-sm font-semibold underline underline-offset-4 transition-colors hover:text-black/50"
-                    >
-                      Return to log in
-                    </button>
-                  </div>
-                ) : (
-                  <form
-                    className="mt-8 space-y-7"
-                    onSubmit={handleForgotPassword}
-                  >
-                    <Field
-                      id="forgot-email"
-                      type="email"
-                      autoComplete="email"
-                      label="Email"
-                      placeholder="you@example.com"
-                      icon={Mail}
-                      value={form.email}
-                      error={errors.email}
-                      onChange={(event) =>
-                        handleChange("email", event.target.value)
-                      }
-                    />
-                    <SubmitButton>Send reset link</SubmitButton>
-                  </form>
-                )}
+                <form
+                  className="mt-8 space-y-7"
+                  onSubmit={handleForgotPassword}
+                >
+                  <Field
+                    id="forgot-email"
+                    type="email"
+                    autoComplete="email"
+                    label="Email"
+                    placeholder="you@example.com"
+                    icon={Mail}
+                    value={form.email}
+                    error={errors.email}
+                    disabled={state.loading}
+                    onChange={(event) =>
+                      handleChange("email", event.target.value)
+                    }
+                  />
+                  <SubmitButton loading={state.loading}>
+                    Send reset code
+                  </SubmitButton>
+                </form>
 
-                {!resetRequested && (
-                  <div className="mt-7 flex flex-wrap items-center justify-center gap-2 text-sm text-black/55">
-                    <span>Remember your password?</span>
-                    <button
-                      type="button"
-                      onClick={() => switchMode("login")}
-                      className="font-semibold text-black underline underline-offset-4 transition-colors hover:text-black/50"
-                    >
-                      Log in
-                    </button>
-                  </div>
-                )}
+                <div className="mt-7 flex flex-wrap items-center justify-center gap-2 text-sm text-black/55">
+                  <span>Remember your password?</span>
+                  <button
+                    type="button"
+                    onClick={() => switchMode("login")}
+                    className="font-semibold text-black underline underline-offset-4 transition-colors hover:text-black/50"
+                  >
+                    Log in
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="auth-form-shell">
@@ -446,168 +419,123 @@ function AuthPage() {
           >
             <div className="auth-form-shell">
               <div className="text-center">
-                <h1 className="auth-title mx-auto">
-                  {signupComplete ? "Account created" : "Create your account"}
-                </h1>
+                <h1 className="auth-title mx-auto">Create your account</h1>
                 <p className="auth-copy mx-auto text-center">
-                  {signupComplete
-                    ? "Your listening journal is ready"
-                    : "Sign up to save your profile and manage your account"}
+                  Sign up to save your profile and manage your account
                 </p>
               </div>
 
-              {signupComplete ? (
-                <div className="mt-10 text-center">
-                  <CheckCircle2
-                    aria-hidden="true"
-                    className="mx-auto h-12 w-12 text-emerald-500"
-                    strokeWidth={1.7}
-                  />
-                  <p className="mx-auto mt-5 max-w-sm text-sm leading-6 text-black/55">
-                    Your account has been created successfully. Continue to
-                    open your personal listening journal.
+              {apiError && (
+                <div
+                  role="alert"
+                  className="mt-7 border-l-2 border-red-600 bg-red-50 px-4 py-3"
+                >
+                  <p className="text-sm font-semibold text-red-700">
+                    {apiError}
                   </p>
-                  {apiError && (
-                    <div
-                      role="alert"
-                      className="mt-6 border-l-2 border-red-600 bg-red-50 px-4 py-3 text-left"
-                    >
-                      <p className="text-sm font-semibold text-red-700">
-                        {apiError}
-                      </p>
-                    </div>
-                  )}
-                  <button
-                    type="button"
-                    onClick={handleContinueAfterSignup}
-                    disabled={state.loading}
-                    className="mt-7 inline-flex h-12 w-full items-center justify-center gap-2 rounded-[4px] bg-black px-7 text-sm font-semibold text-white transition-colors hover:bg-[#46413e] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {state.loading && (
-                      <Loader2
-                        aria-hidden="true"
-                        className="animate-spin"
-                        size={17}
-                      />
-                    )}
-                    Continue
-                  </button>
+                  <p className="mt-1 text-xs text-red-600">
+                    Please check your details and try again.
+                  </p>
                 </div>
-              ) : (
-                <>
-                  {apiError && (
-                    <div
-                      role="alert"
-                      className="mt-7 border-l-2 border-red-600 bg-red-50 px-4 py-3"
-                    >
-                      <p className="text-sm font-semibold text-red-700">
-                        {apiError}
-                      </p>
-                      <p className="mt-1 text-xs text-red-600">
-                        Please check your details and try again.
-                      </p>
-                    </div>
-                  )}
-
-                  <form
-                    className="mt-8 grid gap-x-5 gap-y-5 sm:grid-cols-2"
-                    onSubmit={handleRegister}
-                  >
-                    <Field
-                      id="register-name"
-                      type="text"
-                      autoComplete="name"
-                      label="Name"
-                      placeholder="Your name"
-                      icon={User}
-                      value={form.name}
-                      error={errors.name}
-                      disabled={state.loading}
-                      onChange={(event) =>
-                        handleChange("name", event.target.value)
-                      }
-                    />
-                    <Field
-                      id="register-username"
-                      type="text"
-                      autoComplete="username"
-                      label="Username"
-                      placeholder="your_username"
-                      icon={AtSign}
-                      value={form.username}
-                      error={errors.username}
-                      disabled={state.loading}
-                      onChange={(event) =>
-                        handleChange("username", event.target.value)
-                      }
-                    />
-                    <div className="sm:col-span-2">
-                      <Field
-                        id="register-email"
-                        type="email"
-                        autoComplete="email"
-                        label="Email"
-                        placeholder="you@example.com"
-                        icon={Mail}
-                        value={form.email}
-                        error={errors.email}
-                        disabled={state.loading}
-                        onChange={(event) =>
-                          handleChange("email", event.target.value)
-                        }
-                      />
-                    </div>
-                    <div className="sm:col-span-2">
-                      <Field
-                        id="register-password"
-                        type="password"
-                        autoComplete="new-password"
-                        label="Password"
-                        placeholder="At least 8 characters, including ."
-                        icon={LockKeyhole}
-                        value={form.password}
-                        error={errors.password}
-                        disabled={state.loading}
-                        onChange={(event) =>
-                          handleChange("password", event.target.value)
-                        }
-                      />
-                    </div>
-                    <div className="sm:col-span-2">
-                      <Field
-                        id="register-confirm-password"
-                        type="password"
-                        autoComplete="new-password"
-                        label="Confirm password"
-                        placeholder="Repeat password"
-                        icon={LockKeyhole}
-                        value={form.confirmPassword}
-                        error={errors.confirmPassword}
-                        disabled={state.loading}
-                        onChange={(event) =>
-                          handleChange("confirmPassword", event.target.value)
-                        }
-                      />
-                    </div>
-                    <div className="mt-2 sm:col-span-2">
-                      <SubmitButton loading={state.loading}>Sign up</SubmitButton>
-                    </div>
-                  </form>
-
-                  <GoogleAuthButton />
-
-                  <div className="mt-7 flex flex-wrap items-center justify-center gap-2 text-sm text-black/55">
-                    <span>Already have an account?</span>
-                    <button
-                      type="button"
-                      onClick={() => switchMode("login")}
-                      className="font-semibold text-black underline underline-offset-4 transition-colors hover:text-black/50"
-                    >
-                      Log in
-                    </button>
-                  </div>
-                </>
               )}
+
+              <form
+                className="mt-8 grid gap-x-5 gap-y-5 sm:grid-cols-2"
+                onSubmit={handleRegister}
+              >
+                <Field
+                  id="register-name"
+                  type="text"
+                  autoComplete="name"
+                  label="Name"
+                  placeholder="Your name"
+                  icon={User}
+                  value={form.name}
+                  error={errors.name}
+                  disabled={state.loading}
+                  onChange={(event) =>
+                    handleChange("name", event.target.value)
+                  }
+                />
+                <Field
+                  id="register-username"
+                  type="text"
+                  autoComplete="username"
+                  label="Username"
+                  placeholder="your_username"
+                  icon={AtSign}
+                  value={form.username}
+                  error={errors.username}
+                  disabled={state.loading}
+                  onChange={(event) =>
+                    handleChange("username", event.target.value)
+                  }
+                />
+                <div className="sm:col-span-2">
+                  <Field
+                    id="register-email"
+                    type="email"
+                    autoComplete="email"
+                    label="Email"
+                    placeholder="you@example.com"
+                    icon={Mail}
+                    value={form.email}
+                    error={errors.email}
+                    disabled={state.loading}
+                    onChange={(event) =>
+                      handleChange("email", event.target.value)
+                    }
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <Field
+                    id="register-password"
+                    type="password"
+                    autoComplete="new-password"
+                    label="Password"
+                    placeholder="At least 8 characters, including ."
+                    icon={LockKeyhole}
+                    value={form.password}
+                    error={errors.password}
+                    disabled={state.loading}
+                    onChange={(event) =>
+                      handleChange("password", event.target.value)
+                    }
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <Field
+                    id="register-confirm-password"
+                    type="password"
+                    autoComplete="new-password"
+                    label="Confirm password"
+                    placeholder="Repeat password"
+                    icon={LockKeyhole}
+                    value={form.confirmPassword}
+                    error={errors.confirmPassword}
+                    disabled={state.loading}
+                    onChange={(event) =>
+                      handleChange("confirmPassword", event.target.value)
+                    }
+                  />
+                </div>
+                <div className="mt-2 sm:col-span-2">
+                  <SubmitButton loading={state.loading}>Sign up</SubmitButton>
+                </div>
+              </form>
+
+              <GoogleAuthButton />
+
+              <div className="mt-7 flex flex-wrap items-center justify-center gap-2 text-sm text-black/55">
+                <span>Already have an account?</span>
+                <button
+                  type="button"
+                  onClick={() => switchMode("login")}
+                  className="font-semibold text-black underline underline-offset-4 transition-colors hover:text-black/50"
+                >
+                  Log in
+                </button>
+              </div>
             </div>
           </div>
 

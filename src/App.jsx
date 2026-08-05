@@ -35,6 +35,7 @@ const MyArticlesPage = lazy(() => import("./pages/MyArticlesPage"));
 const MyArticleFormPage = lazy(() => import("./pages/MyArticleFormPage"));
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage"));
+const VerifyCodePage = lazy(() => import("./pages/VerifyCodePage"));
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 
 function App() {
@@ -180,6 +181,14 @@ function App() {
             element={
               <GuestRoute>
                 <AuthPage />
+              </GuestRoute>
+            }
+          />
+          <Route
+            path="/verify-code"
+            element={
+              <GuestRoute>
+                <VerifyCodePage />
               </GuestRoute>
             }
           />
