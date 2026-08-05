@@ -1,8 +1,12 @@
 import { useEffect, useState } from "react";
-import { fetchPublishedPosts } from "../services/postsService";
+import { fetchPublishedPostById } from "../services/postsService";
 import VinylAlbumCarousel from "./VinylAlbumCarousel";
 
-const HERO_TRACK_COUNT = 6;
+// The hero is framed as a fixed, curated set ("06 artists · 06 songs · one
+// best pick each") — not "whatever's newest". Pulling the latest published
+// posts here would surface anything approved later, test content included.
+// These are the original 6 seed post ids.
+const FEATURED_POST_IDS = [1, 2, 3, 4, 5, 6];
 
 function toHeroTrack({ id, artist, bestPick, image, spotifyUrl }) {
   return { id, artist, bestPick, image, spotifyUrl };
@@ -15,12 +19,15 @@ function HeroSection() {
   useEffect(() => {
     let cancelled = false;
 
-    fetchPublishedPosts({ limit: HERO_TRACK_COUNT })
-      .then((result) => {
+    Promise.all(
+      FEATURED_POST_IDS.map((id) =>
+        fetchPublishedPostById(id).catch(() => null),
+      ),
+    )
+      .then((posts) => {
         if (cancelled) return;
-        setHeroTracks(result.posts.map(toHeroTrack));
+        setHeroTracks(posts.filter(Boolean).map(toHeroTrack));
       })
-      .catch(() => {})
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
