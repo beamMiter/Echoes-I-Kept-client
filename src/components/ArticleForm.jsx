@@ -36,6 +36,16 @@ function ArticleForm({
       const url = await onUploadContentImage(file)
       setContentImageUrl(url)
       setSnippetCopied(false)
+
+      // Append to content immediately — this used to require copying the
+      // snippet and pasting it in by hand, and a saved draft would silently
+      // drop the image if that manual step never happened (the upload only
+      // lived in this component's local state, never in form.content).
+      // Auto-inserting means the upload alone is enough to persist it, same
+      // as the cover image above.
+      const needsLeadingNewline = form.content && !form.content.endsWith('\n')
+      const markdown = `${needsLeadingNewline ? '\n\n' : ''}![](${url})\n`
+      onChange('content', form.content + markdown)
     } finally {
       setUploadingContentImage(false)
     }
@@ -217,9 +227,10 @@ function ArticleForm({
               </span>
               <p className="mt-0.5 text-xs text-muted-foreground">
                 A picture that sits inside the article body, between
-                paragraphs — not the cover image above. Upload it, copy the
-                markdown, and paste that into Content where you want it to
-                appear. Repeat for as many as you need.
+                paragraphs — not the cover image above. Uploading adds it to
+                the end of Content automatically; use Copy markdown if you
+                want to move it somewhere else in the text. Repeat for as
+                many as you need.
               </p>
             </div>
             <div className="flex flex-col items-start gap-4">
