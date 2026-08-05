@@ -1,11 +1,4 @@
-function AuthorSidebar({
-  name = "Techin B.",
-  profilePic,
-  bio = [
-    "I write about the artists whose music stays with me, from polished pop and alternative moods to after-dark R&B.",
-    "Each article begins with the artist and ends with my best pick: the song I keep returning to and why it matters to me.",
-  ],
-}) {
+function AuthorSidebar({ name = "Author", profilePic, bio = [] }) {
   return (
     <div className="bg-[#EFEEEB] rounded-3xl p-6">
       <div className="flex items-center mb-4">
@@ -26,9 +19,11 @@ function AuthorSidebar({
       <hr className="border-gray-300 mb-4" />
 
       <div className="text-muted-foreground space-y-4">
-        {bio.map((paragraph) => (
-          <p key={paragraph}>{paragraph}</p>
-        ))}
+        {bio.length > 0 ? (
+          bio.map((paragraph) => <p key={paragraph}>{paragraph}</p>)
+        ) : (
+          <p className="italic">This author hasn't added a bio yet.</p>
+        )}
       </div>
     </div>
   );

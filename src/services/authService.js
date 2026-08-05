@@ -70,7 +70,7 @@ export async function login({ email, password, role }) {
   }
 }
 
-export async function updateProfile({ name, username, email, profilePic }) {
+export async function updateProfile({ name, username, email, profilePic, bio }) {
   try {
     const { firstName, lastName } = splitName(name)
     const { data } = await apiClient.put('/api/auth/me', {
@@ -79,6 +79,7 @@ export async function updateProfile({ name, username, email, profilePic }) {
       username,
       email,
       profilePic: profilePic || null,
+      bio,
     })
 
     const user = toDisplayUser(data.data)
