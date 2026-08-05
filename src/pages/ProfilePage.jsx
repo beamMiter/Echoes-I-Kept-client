@@ -3,6 +3,7 @@ import { User } from 'lucide-react'
 import { toast } from 'sonner'
 import AccountLayout from '../components/AccountLayout'
 import { useAuth } from '../context/useAuth'
+import { bioParagraphsToText, bioTextToParagraphs } from '../utils/bio'
 
 function getProfileForm(user) {
   return {
@@ -10,18 +11,8 @@ function getProfileForm(user) {
     username: user?.username || '',
     email: user?.email || '',
     profilePic: user?.profilePic || '',
-    // Stored as one paragraph per array entry (matches posts.author_bio,
-    // which this gets snapshotted into on post creation) — a blank line in
-    // the textarea is how an author splits their bio into paragraphs.
-    bio: (user?.bio || []).join('\n\n'),
+    bio: bioParagraphsToText(user?.bio),
   }
-}
-
-function bioTextToParagraphs(text) {
-  return text
-    .split(/\n\s*\n/)
-    .map((paragraph) => paragraph.replace(/\s+/g, ' ').trim())
-    .filter(Boolean)
 }
 
 function ProfilePage() {

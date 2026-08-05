@@ -15,11 +15,13 @@ function ArticleForm({
   errors = {},
   categories = [],
   authorName,
+  authorBio = '',
   uploading = false,
   uploadingDetailImage = false,
   onChange,
   onImageUpload,
   onDetailImageUpload,
+  onAuthorBioChange,
   footer,
 }) {
   const [previewingContent, setPreviewingContent] = useState(false)
@@ -182,6 +184,23 @@ function ArticleForm({
             disabled
             className="h-10 w-full rounded-sm border border-transparent bg-[#FAFAF9] px-3 text-sm text-muted-foreground"
           />
+        </label>
+
+        <label className="flex flex-col gap-2">
+          <span className="text-sm font-medium text-muted-foreground">
+            Your bio
+          </span>
+          <textarea
+            value={authorBio}
+            onChange={(event) => onAuthorBioChange?.(event.target.value)}
+            className="min-h-24 w-full rounded-sm border border-input bg-background px-3 py-3 text-sm focus-visible:border-muted-foreground focus-visible:outline-none"
+            placeholder="Tell readers what you write about. Leave a blank line between paragraphs."
+          />
+          <span className="text-xs text-muted-foreground">
+            Saved to your profile and shown on your articles' author card.
+            Editing it here won't change posts you've already published —
+            only new ones snapshot it.
+          </span>
         </label>
       </FormSection>
 

@@ -21,6 +21,7 @@ import {
 } from '../utils/articleForm'
 import { useAuth } from '../context/useAuth'
 import { buttonClassName } from '../utils/buttonStyles'
+import { bioParagraphsToText, bioTextToParagraphs } from '../utils/bio'
 
 const emptyForm = { ...emptyArticleForm, category: 'Pop' }
 
@@ -29,7 +30,7 @@ function getErrorMessage(error, fallback) {
 }
 
 function AdminArticleManagementPage() {
-  const { state } = useAuth()
+  const { state, updateProfile } = useAuth()
   const [categories, setCategories] = useState([])
   const [articles, setArticles] = useState([])
   const [loading, setLoading] = useState(true)
@@ -38,6 +39,7 @@ function AdminArticleManagementPage() {
   const [uploadingDetailImage, setUploadingDetailImage] = useState(false)
   const [view, setView] = useState('list')
   const [form, setForm] = useState(emptyForm)
+  const [authorBio, setAuthorBio] = useState(() => bioParagraphsToText(state.user?.bio))
   const [status, setStatus] = useState('pending')
   const [editingId, setEditingId] = useState(null)
   const [errors, setErrors] = useState({})
@@ -110,6 +112,7 @@ function AdminArticleManagementPage() {
     // Not shown as an editable control on create — every new post starts
     // pending no matter what's sent, so this is purely for the request body.
     setStatus('pending')
+    setAuthorBio(bioParagraphsToText(state.user?.bio))
     setErrors({})
     setView('form')
   }
@@ -118,6 +121,7 @@ function AdminArticleManagementPage() {
     setEditingId(article.id)
     setForm(getArticleForm(article))
     setStatus(article.status)
+    setAuthorBio(bioParagraphsToText(state.user?.bio))
     setErrors({})
     setView('form')
   }
@@ -138,6 +142,23 @@ function AdminArticleManagementPage() {
 
     setSubmitting(true)
     try {
+      const nextBio = bioTextToParagraphs(authorBio)
+      const currentBio = state.user?.bio || []
+      if (JSON.stringify(nextBio) !== JSON.stringify(currentBio)) {
+        const result = await updateProfile({
+          name: state.user.name,
+          username: state.user.username,
+          email: state.user.email,
+          profilePic: state.user.profilePic,
+          bio: nextBio,
+        })
+        if (result?.error) {
+          setApiError(result.error)
+          setSubmitting(false)
+          return
+        }
+      }
+
       if (editingArticle) {
         await updateAdminArticle(editingArticle, form, status)
         showToast('Article updated', 'Your article has been successfully saved')
@@ -237,11 +258,13 @@ function AdminArticleManagementPage() {
             errors={errors}
             categories={categories}
             authorName={state.user?.name || ''}
+            authorBio={authorBio}
             uploading={uploading}
             uploadingDetailImage={uploadingDetailImage}
             onChange={updateForm}
             onImageUpload={handleImageUpload}
             onDetailImageUpload={handleDetailImageUpload}
+            onAuthorBioChange={setAuthorBio}
             footer={
               isEditing && (
                 <label className="flex flex-col gap-2">

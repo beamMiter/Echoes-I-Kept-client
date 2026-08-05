@@ -14,6 +14,7 @@ import {
 } from '../utils/articleForm'
 import { getStatusMeta } from '../utils/postStatus'
 import { buttonClassName } from '../utils/buttonStyles'
+import { bioParagraphsToText, bioTextToParagraphs } from '../utils/bio'
 import { useAuth } from '../context/useAuth'
 import { fetchCategories } from '../services/categoriesService'
 import { uploadArticleImage } from '../services/articleAdminService'
@@ -30,10 +31,11 @@ function getErrorMessage(error, fallback) {
 function MyArticleFormPage() {
   const { postId } = useParams()
   const navigate = useNavigate()
-  const { state } = useAuth()
+  const { state, updateProfile } = useAuth()
   const isEditing = Boolean(postId)
 
   const [form, setForm] = useState(emptyArticleForm)
+  const [authorBio, setAuthorBio] = useState(() => bioParagraphsToText(state.user?.bio))
   const [existing, setExisting] = useState(null)
   const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(true)
@@ -114,6 +116,23 @@ function MyArticleFormPage() {
     setSubmitting(true)
     setApiError('')
     try {
+      const nextBio = bioTextToParagraphs(authorBio)
+      const currentBio = state.user?.bio || []
+      if (JSON.stringify(nextBio) !== JSON.stringify(currentBio)) {
+        const result = await updateProfile({
+          name: state.user.name,
+          username: state.user.username,
+          email: state.user.email,
+          profilePic: state.user.profilePic,
+          bio: nextBio,
+        })
+        if (result?.error) {
+          setApiError(result.error)
+          setSubmitting(false)
+          return
+        }
+      }
+
       if (isEditing) {
         await updateMyArticle(postId, form, status)
       } else {
@@ -216,11 +235,13 @@ function MyArticleFormPage() {
               errors={errors}
               categories={categories}
               authorName={state.user?.name || ''}
+              authorBio={authorBio}
               uploading={uploading}
               uploadingDetailImage={uploadingDetailImage}
               onChange={updateForm}
               onImageUpload={handleImageUpload}
               onDetailImageUpload={handleDetailImageUpload}
+              onAuthorBioChange={setAuthorBio}
             />
 
             <div className="mt-8 flex flex-wrap gap-3">
