@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { useParams } from "react-router-dom";
 import { FileQuestion, ImageOff } from "lucide-react";
+import { toast } from "sonner";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import LoadingSpinner from "../components/LoadingSpinner";
@@ -145,6 +146,7 @@ function PostDetailContent({ post, postId }) {
 
     const comment = await createComment(postId, text);
     setComments((prev) => [comment, ...prev]);
+    toast.success("Comment posted");
     return true;
   };
 
