@@ -14,7 +14,11 @@ import { normalizeApiError } from './apiError'
 // So every response is normalized to its expected shape here, once, rather
 // than each call site guarding defensively.
 function asString(value, fallback = '') {
-  return typeof value === 'string' ? value : fallback
+  if (typeof value === 'string') return value
+  // The fallback is a caller-supplied field, so it can be undefined too —
+  // returning it unchecked would defeat the point and hand a non-string back
+  // to a component that calls .trim() on it.
+  return typeof fallback === 'string' ? fallback : ''
 }
 
 function asStringArray(value) {

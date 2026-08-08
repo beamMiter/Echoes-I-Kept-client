@@ -13,37 +13,43 @@ function ArticlePreviewDialog({ form, authorName, authorBio, authorAvatar, onClo
   // a history entry of its own, that Back press falls through to the app's
   // real previous route and unmounts the form entirely, losing the draft.
   // Pushing a dummy entry on open makes Back just close the preview instead.
-  // Tracks whether our entry is still on the stack, so it gets popped exactly
+  // Tracks whether our entry is on the stack so it's pushed once and popped
   // once. StrictMode runs this effect mount → cleanup → mount in development,
-  // which would otherwise push twice and pop once, stranding a dead entry that
-  // makes both browser Back and the form's Cancel (navigate(-1)) need two
-  // presses to leave the page.
+  // and the guard is on the *push* rather than the cleanup deliberately:
+  // history.back() is asynchronous while StrictMode's remount is synchronous,
+  // so popping in cleanup would queue a traversal that lands after the second
+  // pushState and fires popstate into the newly attached listener — closing
+  // the preview the moment it opens. Skipping the duplicate push has no such
+  // race. The ref survives the simulated remount (same fiber), which is what
+  // makes the guard work.
   const pushedEntry = useRef(false)
 
   useEffect(() => {
-    window.history.pushState({ articlePreview: true }, '')
-    pushedEntry.current = true
+    if (!pushedEntry.current) {
+      window.history.pushState({ articlePreview: true }, '')
+      pushedEntry.current = true
+    }
 
     const handlePopState = () => {
-      // The browser already popped our entry to get here — don't pop again.
+      // The browser consumed our entry to get here, so there's nothing left
+      // to pop — just close.
       pushedEntry.current = false
       onClose()
     }
 
     window.addEventListener('popstate', handlePopState)
-    return () => {
-      window.removeEventListener('popstate', handlePopState)
-      if (pushedEntry.current) {
-        pushedEntry.current = false
-        window.history.back()
-      }
-    }
+    return () => window.removeEventListener('popstate', handlePopState)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   function handleClose() {
-    // Unmounting runs the cleanup above, which pops the entry we pushed — so
-    // this only has to close, or the stack would rewind one step too far.
+    // Consume our own entry so a later Back doesn't land on it after the
+    // preview is already gone. popstate then fires and calls onClose too;
+    // closing twice is a no-op.
+    if (pushedEntry.current) {
+      pushedEntry.current = false
+      window.history.back()
+    }
     onClose()
   }
 
