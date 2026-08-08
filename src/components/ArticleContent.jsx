@@ -74,7 +74,7 @@ function ArticleContent({
               >
                 {category || (placeholder ? 'Uncategorized' : '')}
               </span>
-              {(dateLabel || !placeholder) && (
+              {dateLabel && (
                 <span className="shrink-0 text-sm text-muted-foreground">{dateLabel}</span>
               )}
             </div>
