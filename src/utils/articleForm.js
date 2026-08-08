@@ -8,6 +8,11 @@ export const emptyArticleForm = {
   category: '',
   image: '',
   detailImage: '',
+  // No form control edits this — it's carried read-only so the preview crops
+  // the hero the same way the published page will. Without it the preview
+  // always fell back to 'center' while PostDetailPage honoured the stored
+  // value, which is exactly the drift the shared ArticleContent exists to stop.
+  detailImagePosition: '',
   description: '',
   content: '',
   artist: '',
@@ -23,6 +28,7 @@ export function getArticleForm(article) {
     category: article.category,
     image: article.image,
     detailImage: article.detailImage || '',
+    detailImagePosition: article.detailImagePosition || '',
     description: article.description,
     content: article.content,
     artist: article.artist || '',

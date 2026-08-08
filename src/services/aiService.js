@@ -41,6 +41,9 @@ export async function polishDraft({ content, title, description }) {
   }
 }
 
+// Must stay in step with READINESS_STYLES in ArticleForm.jsx.
+const READINESS_VALUES = ['ready', 'needs_work']
+
 export async function checkBeforeSubmit({ content, title, artist, bestPick, description }) {
   try {
     const { data } = await apiClient.post('/api/ai/presubmit-check', {
@@ -51,7 +54,11 @@ export async function checkBeforeSubmit({ content, title, artist, bestPick, desc
       description,
     })
     return {
-      readiness: asString(data?.readiness),
+      // Allowlisted the same way as `recommendation` below: the value is a
+      // key into READINESS_STYLES, and anything unrecognized would look up
+      // undefined and render the dialog with no verdict at all. Unknown
+      // means "look at it", never "looks ready".
+      readiness: READINESS_VALUES.includes(data?.readiness) ? data.readiness : 'needs_work',
       concerns: asStringArray(data?.concerns),
       strengths: asStringArray(data?.strengths),
       suggestions: asStringArray(data?.suggestions),

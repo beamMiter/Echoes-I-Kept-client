@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Sparkles, X } from 'lucide-react'
 import { buttonClassName } from '../utils/buttonStyles'
 
@@ -5,8 +6,20 @@ import { buttonClassName } from '../utils/buttonStyles'
 // submitting" — both return notes for the author to act on themselves,
 // never a replacement for the text, so there's nothing here to accept.
 function AiAdviceDialog({ title, description, badge, sections, onClose }) {
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [onClose])
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-8">
+    <div
+      role="dialog"
+      aria-modal="true"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-8"
+    >
       <div className="relative flex max-h-full w-full max-w-2xl flex-col rounded-md bg-background px-6 py-6 shadow-lg sm:px-8">
         <button
           type="button"

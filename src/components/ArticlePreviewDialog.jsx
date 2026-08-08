@@ -23,6 +23,8 @@ function ArticlePreviewDialog({ form, authorName, authorBio, authorAvatar, onClo
   // race. The ref survives the simulated remount (same fiber), which is what
   // makes the guard work.
   const pushedEntry = useRef(false)
+  const overlayRef = useRef(null)
+  const closeButtonRef = useRef(null)
 
   useEffect(() => {
     if (!pushedEntry.current) {
@@ -39,6 +41,47 @@ function ArticlePreviewDialog({ form, authorName, authorBio, authorAvatar, onClo
 
     window.addEventListener('popstate', handlePopState)
     return () => window.removeEventListener('popstate', handlePopState)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // This overlay isn't portaled, so the form is still in the tab order behind
+  // it. Without containment, Tab reaches "Submit for review" and "Cancel" —
+  // and Cancel is navigate(-1), which would pop the preview's own history
+  // entry and look like nothing happened. Escape closes properly for the same
+  // reason: every exit should route through handleClose.
+  useEffect(() => {
+    closeButtonRef.current?.focus()
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        handleClose()
+        return
+      }
+
+      if (event.key !== 'Tab') return
+
+      const focusable = overlayRef.current?.querySelectorAll(
+        'a[href], button:not([disabled]), input, textarea, select, [tabindex]:not([tabindex="-1"])',
+      )
+      if (!focusable?.length) return
+
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      const active = document.activeElement
+
+      // Wrap at both ends, and pull focus back in if it has already escaped.
+      if (event.shiftKey && (active === first || !overlayRef.current.contains(active))) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && (active === last || !overlayRef.current.contains(active))) {
+        event.preventDefault()
+        first.focus()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -62,12 +105,19 @@ function ArticlePreviewDialog({ form, authorName, authorBio, authorAvatar, onClo
   })
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-background">
+    <div
+      ref={overlayRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Article preview"
+      className="fixed inset-0 z-50 overflow-y-auto bg-background"
+    >
       <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-background/95 px-4 py-3 backdrop-blur sm:px-8">
         <span className="text-sm font-medium text-muted-foreground">
           Preview — this is how the article will look, not saved
         </span>
         <button
+          ref={closeButtonRef}
           type="button"
           onClick={handleClose}
           className="rounded-full p-1.5 text-muted-foreground hover:bg-[#EFEEEB] hover:text-foreground"
@@ -84,7 +134,7 @@ function ArticlePreviewDialog({ form, authorName, authorBio, authorAvatar, onClo
         description={form.description}
         content={form.content}
         heroImage={heroImage}
-        heroImagePosition={form.detailImagePosition}
+        heroImagePosition={form.detailImagePosition || 'center'}
         authorName={authorName}
         authorBio={bioParagraphs}
         authorAvatar={authorAvatar}

@@ -33,7 +33,11 @@ function AdminContentModerationPage() {
   // Advisory analysis, keyed by article id. Nothing here decides anything —
   // approve/reject remain manual clicks against the admin-only post routes.
   const [analyses, setAnalyses] = useState({})
-  const [analyzingId, setAnalyzingId] = useState(null)
+  // A set rather than a single id: analyses run concurrently, and holding one
+  // id meant starting a second overwrote the first, flipping its button back
+  // to enabled while its request was still open and inviting a duplicate call
+  // against a metered endpoint.
+  const [analyzingIds, setAnalyzingIds] = useState(() => new Set())
 
   useEffect(() => {
     let cancelled = false
@@ -59,7 +63,7 @@ function AdminContentModerationPage() {
   }
 
   const handleAnalyze = async (article) => {
-    setAnalyzingId(article.id)
+    setAnalyzingIds((prev) => new Set(prev).add(article.id))
     setApiError('')
     try {
       const result = await analyzePost(article.id)
@@ -67,10 +71,11 @@ function AdminContentModerationPage() {
     } catch (error) {
       setApiError(getErrorMessage(error, 'Unable to analyze this post.'))
     } finally {
-      // Only clear if this article is still the one showing as in-flight —
-      // with two analyses running, the first to resolve would otherwise
-      // re-enable the second's button while its request is still open.
-      setAnalyzingId((current) => (current === article.id ? null : current))
+      setAnalyzingIds((prev) => {
+        const next = new Set(prev)
+        next.delete(article.id)
+        return next
+      })
     }
   }
 
@@ -139,6 +144,7 @@ function AdminContentModerationPage() {
           {articles.map((article) => {
             const expanded = expandedId === article.id
             const analysis = analyses[article.id]
+            const analyzing = analyzingIds.has(article.id)
             // aiService already narrows `recommendation` to a known key, but
             // falling back here keeps an unrecognized verdict from throwing
             // mid-render and blanking the queue if the two ever drift apart.
@@ -240,11 +246,11 @@ function AdminContentModerationPage() {
                     <button
                       type="button"
                       onClick={() => handleAnalyze(article)}
-                      disabled={analyzingId === article.id}
+                      disabled={analyzing}
                       className={buttonClassName('ai')}
                     >
                       <Sparkles className={`h-4 w-4 ${AI_ICON_HOVER_CLASS}`} aria-hidden="true" />
-                      {analyzingId === article.id
+                      {analyzing
                         ? 'Reading...'
                         : analysis
                           ? 'Re-check'
