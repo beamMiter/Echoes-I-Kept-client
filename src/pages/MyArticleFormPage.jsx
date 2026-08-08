@@ -236,39 +236,42 @@ function MyArticleFormPage() {
               categories={categories}
               authorName={state.user?.name || ''}
               authorBio={authorBio}
+              authorAvatar={state.user?.profilePic}
               uploading={uploading}
               uploadingDetailImage={uploadingDetailImage}
               onChange={updateForm}
               onImageUpload={handleImageUpload}
               onDetailImageUpload={handleDetailImageUpload}
               onAuthorBioChange={setAuthorBio}
+              enablePresubmitCheck
+              actions={
+                <>
+                  <button
+                    type="button"
+                    onClick={() => handleSubmit('pending')}
+                    disabled={submitting || uploading}
+                    className={buttonClassName('primary')}
+                  >
+                    {submitting ? 'Sending...' : 'Submit for review'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSubmit('draft')}
+                    disabled={submitting || uploading}
+                    className={buttonClassName('secondary')}
+                  >
+                    Save as draft
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate(-1)}
+                    className={buttonClassName('secondary')}
+                  >
+                    Cancel
+                  </button>
+                </>
+              }
             />
-
-            <div className="mt-8 flex flex-wrap gap-3">
-              <button
-                type="button"
-                onClick={() => handleSubmit('pending')}
-                disabled={submitting || uploading}
-                className={buttonClassName('primary')}
-              >
-                {submitting ? 'Sending...' : 'Submit for review'}
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSubmit('draft')}
-                disabled={submitting || uploading}
-                className={buttonClassName('secondary')}
-              >
-                Save as draft
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate(-1)}
-                className={buttonClassName('secondary')}
-              >
-                Cancel
-              </button>
-            </div>
           </form>
         )}
       </main>

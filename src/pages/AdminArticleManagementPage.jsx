@@ -259,6 +259,7 @@ function AdminArticleManagementPage() {
             categories={categories}
             authorName={state.user?.name || ''}
             authorBio={authorBio}
+            authorAvatar={state.user?.profilePic}
             uploading={uploading}
             uploadingDetailImage={uploadingDetailImage}
             onChange={updateForm}

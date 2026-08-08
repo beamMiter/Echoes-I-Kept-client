@@ -20,8 +20,18 @@ const VARIANTS = {
   // Outlined, turns red on hover — a destructive action offered alongside
   // neutral ones (Reject), where a filled red button would shout too loudly.
   dangerOutline: 'border border-foreground hover:border-red-600 hover:text-red-600',
+  // Filled gray — every AI-powered action (Tidy up, Check before submitting,
+  // Check with AI) shares this so it reads as "the assistant", not just
+  // another neutral form control sitting next to it. `group` lets the icon
+  // inside react to hover via AI_ICON_HOVER_CLASS below.
+  ai: 'group border border-gray-400 bg-gray-200 text-gray-800 hover:border-gray-500 hover:bg-gray-300',
 }
 
 export function buttonClassName(variant = 'primary', extra = '') {
   return `${BASE} ${VARIANTS[variant] ?? VARIANTS.primary}${extra ? ` ${extra}` : ''}`
 }
+
+// Put on the icon inside any `ai`-variant button (or AI_BUTTON_CLASS in
+// ArticleForm) — it spins and pops only while hovering, not constantly.
+export const AI_ICON_HOVER_CLASS =
+  'transition-transform duration-300 group-hover:rotate-12 group-hover:scale-125'
