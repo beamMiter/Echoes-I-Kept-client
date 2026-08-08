@@ -6,6 +6,7 @@ import AiDiffDialog from './AiDiffDialog'
 import ArticlePreviewDialog from './ArticlePreviewDialog'
 import FormSection from './FormSection'
 import { checkBeforeSubmit, polishDraft } from '../services/aiService'
+import { DESCRIPTION_MAX_LENGTH } from '../utils/articleForm'
 import { AI_ICON_HOVER_CLASS, buttonClassName } from '../utils/buttonStyles'
 
 // Form state helpers live in ../utils/articleForm — keeping this file to a
@@ -54,6 +55,9 @@ function ArticleForm({
   const [suggestion, setSuggestion] = useState(null)
   const [presubmitResult, setPresubmitResult] = useState(null)
   const aiMenuRef = useRef(null)
+  // Closing the menu doesn't cancel the request behind it, so without this both
+  // actions could be started and resolve into two stacked z-50 dialogs.
+  const aiBusy = polishing || checkingSubmit
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -90,7 +94,10 @@ function ArticleForm({
 
   function acceptSuggestion() {
     onChange('title', suggestion.title)
-    onChange('description', suggestion.description)
+    // maxLength doesn't apply to a programmatic write, and the assistant isn't
+    // told about the cap — an over-long intro would sail into state here and
+    // only fail later, server-side, with nothing in the UI explaining why.
+    onChange('description', suggestion.description.slice(0, DESCRIPTION_MAX_LENGTH))
     onChange('content', suggestion.content)
     setSuggestion(null)
     toast.success('Suggested edit applied.')
@@ -320,13 +327,13 @@ function ArticleForm({
 
         <label className="flex flex-col gap-2">
           <span className="text-sm font-medium text-muted-foreground">
-            Introduction (max 120 letters)
+            Introduction (max {DESCRIPTION_MAX_LENGTH} letters)
           </span>
           <textarea
             value={form.description}
             onChange={(event) => onChange('description', event.target.value)}
             className="min-h-28 w-full rounded-sm border border-input bg-background px-3 py-3 text-sm focus-visible:border-muted-foreground focus-visible:outline-none"
-            maxLength={120}
+            maxLength={DESCRIPTION_MAX_LENGTH}
             placeholder="Introduction"
           />
           {errors.description && (
@@ -389,7 +396,7 @@ function ArticleForm({
               <button
                 type="button"
                 onClick={handlePolish}
-                disabled={polishing}
+                disabled={aiBusy}
                 className={MENU_ITEM_CLASS}
                 role="menuitem"
               >
@@ -399,7 +406,7 @@ function ArticleForm({
                 <button
                   type="button"
                   onClick={handleCheckBeforeSubmit}
-                  disabled={checkingSubmit}
+                  disabled={aiBusy}
                   className={MENU_ITEM_CLASS}
                   role="menuitem"
                 >

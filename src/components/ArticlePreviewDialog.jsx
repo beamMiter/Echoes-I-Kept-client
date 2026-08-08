@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { X } from 'lucide-react'
 import ArticleContent from './ArticleContent'
 import { bioTextToParagraphs } from '../utils/bio'
@@ -13,18 +13,37 @@ function ArticlePreviewDialog({ form, authorName, authorBio, authorAvatar, onClo
   // a history entry of its own, that Back press falls through to the app's
   // real previous route and unmounts the form entirely, losing the draft.
   // Pushing a dummy entry on open makes Back just close the preview instead.
+  // Tracks whether our entry is still on the stack, so it gets popped exactly
+  // once. StrictMode runs this effect mount → cleanup → mount in development,
+  // which would otherwise push twice and pop once, stranding a dead entry that
+  // makes both browser Back and the form's Cancel (navigate(-1)) need two
+  // presses to leave the page.
+  const pushedEntry = useRef(false)
+
   useEffect(() => {
     window.history.pushState({ articlePreview: true }, '')
-    const handlePopState = () => onClose()
+    pushedEntry.current = true
+
+    const handlePopState = () => {
+      // The browser already popped our entry to get here — don't pop again.
+      pushedEntry.current = false
+      onClose()
+    }
+
     window.addEventListener('popstate', handlePopState)
-    return () => window.removeEventListener('popstate', handlePopState)
+    return () => {
+      window.removeEventListener('popstate', handlePopState)
+      if (pushedEntry.current) {
+        pushedEntry.current = false
+        window.history.back()
+      }
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   function handleClose() {
-    // Consume the dummy entry we pushed above so Back doesn't land on it
-    // again after the preview is already closed.
-    window.history.back()
+    // Unmounting runs the cleanup above, which pops the entry we pushed — so
+    // this only has to close, or the stack would rewind one step too far.
     onClose()
   }
 

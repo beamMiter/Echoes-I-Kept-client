@@ -6,10 +6,32 @@ import { normalizeApiError } from './apiError'
 // and it reaches the API through the normal post routes, with the normal
 // validation. Keep it that way.
 
+// The server constrains the model to a JSON schema and validates with zod, but
+// this is still a model's output crossing a network boundary into components
+// that index into it (`.length`, `.trim()`, style-map lookups). A missing or
+// null field would throw during render, and there's no error boundary on these
+// routes — the whole page would blank out, taking an unsaved draft with it.
+// So every response is normalized to its expected shape here, once, rather
+// than each call site guarding defensively.
+function asString(value, fallback = '') {
+  return typeof value === 'string' ? value : fallback
+}
+
+function asStringArray(value) {
+  return Array.isArray(value) ? value.filter((item) => typeof item === 'string') : []
+}
+
 export async function polishDraft({ content, title, description }) {
   try {
     const { data } = await apiClient.post('/api/ai/polish', { content, title, description })
-    return data
+    // Falling back to what was sent is the right reading of an absent field:
+    // "the assistant didn't change this one".
+    return {
+      title: asString(data?.title, title),
+      description: asString(data?.description, description),
+      content: asString(data?.content, content),
+      notes: asStringArray(data?.notes),
+    }
   } catch (error) {
     throw normalizeApiError(error)
   }
@@ -24,16 +46,32 @@ export async function checkBeforeSubmit({ content, title, artist, bestPick, desc
       bestPick,
       description,
     })
-    return data
+    return {
+      readiness: asString(data?.readiness),
+      concerns: asStringArray(data?.concerns),
+      strengths: asStringArray(data?.strengths),
+      suggestions: asStringArray(data?.suggestions),
+    }
   } catch (error) {
     throw normalizeApiError(error)
   }
 }
 
+const RECOMMENDATIONS = ['approve', 'review', 'reject']
+
 export async function analyzePost(postId) {
   try {
     const { data } = await apiClient.post('/api/ai/moderate', { postId })
-    return data
+    return {
+      // Anything outside the known set becomes 'review' — an unrecognized
+      // verdict should send the admin to look, never silently read as
+      // "nothing flagged".
+      recommendation: RECOMMENDATIONS.includes(data?.recommendation)
+        ? data.recommendation
+        : 'review',
+      concerns: asStringArray(data?.concerns),
+      suggestedRejectionReason: asString(data?.suggestedRejectionReason),
+    }
   } catch (error) {
     throw normalizeApiError(error)
   }

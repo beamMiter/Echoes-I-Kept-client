@@ -1,3 +1,8 @@
+// The introduction's hard cap. The textarea enforces it via maxLength, but
+// that only constrains typing — anything written to form state programmatically
+// (an accepted AI suggestion, say) has to clamp against this itself.
+export const DESCRIPTION_MAX_LENGTH = 120
+
 export const emptyArticleForm = {
   title: '',
   category: '',

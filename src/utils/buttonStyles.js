@@ -31,7 +31,7 @@ export function buttonClassName(variant = 'primary', extra = '') {
   return `${BASE} ${VARIANTS[variant] ?? VARIANTS.primary}${extra ? ` ${extra}` : ''}`
 }
 
-// Put on the icon inside any `ai`-variant button (or AI_BUTTON_CLASS in
-// ArticleForm) — it spins and pops only while hovering, not constantly.
+// Put on the icon inside any `ai`-variant button — it spins and pops only
+// while hovering, not constantly.
 export const AI_ICON_HOVER_CLASS =
   'transition-transform duration-300 group-hover:rotate-12 group-hover:scale-125'

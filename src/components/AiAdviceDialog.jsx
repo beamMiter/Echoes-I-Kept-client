@@ -35,22 +35,28 @@ function AiAdviceDialog({ title, description, badge, sections, onClose }) {
         )}
 
         <div className="mt-5 flex-1 space-y-5 overflow-auto">
-          {sections.map((section) => (
-            <div key={section.heading}>
-              <h3 className="mb-2 text-sm font-medium text-muted-foreground">
-                {section.heading}
-              </h3>
-              {section.items.length > 0 ? (
-                <ul className="list-inside list-disc space-y-1.5 rounded-sm bg-[#F5F4F2] px-4 py-3 text-sm leading-relaxed">
-                  {section.items.map((item, index) => (
-                    <li key={index}>{item}</li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-sm text-muted-foreground">{section.emptyText}</p>
-              )}
-            </div>
-          ))}
+          {sections.map((section) => {
+            // A caller passing no items at all should land on emptyText, which
+            // is the whole point of that prop — not throw on `.length`.
+            const items = Array.isArray(section.items) ? section.items : []
+
+            return (
+              <div key={section.heading}>
+                <h3 className="mb-2 text-sm font-medium text-muted-foreground">
+                  {section.heading}
+                </h3>
+                {items.length > 0 ? (
+                  <ul className="list-inside list-disc space-y-1.5 rounded-sm bg-[#F5F4F2] px-4 py-3 text-sm leading-relaxed">
+                    {items.map((item, index) => (
+                      <li key={index}>{item}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-muted-foreground">{section.emptyText}</p>
+                )}
+              </div>
+            )
+          })}
         </div>
 
         <div className="mt-6 flex justify-end">

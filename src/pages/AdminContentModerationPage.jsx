@@ -67,7 +67,10 @@ function AdminContentModerationPage() {
     } catch (error) {
       setApiError(getErrorMessage(error, 'Unable to analyze this post.'))
     } finally {
-      setAnalyzingId(null)
+      // Only clear if this article is still the one showing as in-flight —
+      // with two analyses running, the first to resolve would otherwise
+      // re-enable the second's button while its request is still open.
+      setAnalyzingId((current) => (current === article.id ? null : current))
     }
   }
 
@@ -136,8 +139,12 @@ function AdminContentModerationPage() {
           {articles.map((article) => {
             const expanded = expandedId === article.id
             const analysis = analyses[article.id]
+            // aiService already narrows `recommendation` to a known key, but
+            // falling back here keeps an unrecognized verdict from throwing
+            // mid-render and blanking the queue if the two ever drift apart.
             const recommendation = analysis
-              ? RECOMMENDATION_STYLES[analysis.recommendation]
+              ? RECOMMENDATION_STYLES[analysis.recommendation] ??
+                RECOMMENDATION_STYLES.review
               : null
 
             return (
