@@ -1,4 +1,9 @@
-function AuthorSidebar({ name = "Author", profilePic, bio = [] }) {
+function AuthorSidebar({ name = "Author", profilePic, bio }) {
+  // A default parameter only fires on `undefined`, and the API can return a
+  // null author_bio — which would reach `bio.length` below and blank the whole
+  // article page. Normalizing here closes it for every caller at once.
+  const bioParagraphs = Array.isArray(bio) ? bio : [];
+
   return (
     <div className="bg-[#EFEEEB] rounded-3xl p-6">
       <div className="flex items-center mb-4">
@@ -19,8 +24,8 @@ function AuthorSidebar({ name = "Author", profilePic, bio = [] }) {
       <hr className="border-gray-300 mb-4" />
 
       <div className="text-muted-foreground space-y-4">
-        {bio.length > 0 ? (
-          bio.map((paragraph) => <p key={paragraph}>{paragraph}</p>)
+        {bioParagraphs.length > 0 ? (
+          bioParagraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)
         ) : (
           <p className="italic">This author hasn't added a bio yet.</p>
         )}
