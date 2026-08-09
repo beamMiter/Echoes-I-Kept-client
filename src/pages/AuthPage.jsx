@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { AtSign, Loader2, LockKeyhole, Mail, User } from "lucide-react";
@@ -7,6 +7,7 @@ import Footer from "../components/Footer";
 import { getPasswordStrengthError } from "../utils/passwordValidation";
 import { useAuth } from "../context/useAuth";
 import { setPendingVerification } from "../utils/verifyCodeSession";
+import { loadGoogleIdentityScript } from "../utils/googleIdentity";
 
 const emptyForm = {
   name: "",
@@ -110,9 +111,65 @@ function SubmitButton({ children, loading }) {
   );
 }
 
+// Google Identity Services' renderButton() only draws Google's own button —
+// it can't take our icon/label. A fully custom button driving google.accounts
+// .id.prompt() (One Tap) isn't reliable enough to build a "click → popup"
+// flow around: Google suppresses/cools down the prompt after a user dismisses
+// it once, so a real click can silently do nothing.
+//
+// So the real, invisible Google button is layered on top of our styled one,
+// sized to match exactly — whatever the user clicks always lands on Google's
+// actual button underneath, which opens the standard account-chooser popup
+// reliably. What's visible is still the custom design; what actually handles
+// the click and the OAuth flow is the genuine GIS button.
 function GoogleAuthButton() {
-  // TODO: Connect this button to Google OAuth when server authentication is ready.
-  const handleGoogleAuth = () => {};
+  const hostRef = useRef(null);
+  const { loginWithGoogle } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function handleCredentialResponse({ credential }) {
+      const result = await loginWithGoogle(credential);
+      if (result?.error) {
+        toast.error("Unable to continue with Google", {
+          description: result.error,
+        });
+        return;
+      }
+      toast.success("Welcome", {
+        description: "You are signed in to your listening journal.",
+      });
+      navigate("/");
+    }
+
+    loadGoogleIdentityScript()
+      .then(() => {
+        if (cancelled || !hostRef.current) return;
+        window.google.accounts.id.initialize({
+          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+          callback: handleCredentialResponse,
+        });
+        window.google.accounts.id.renderButton(hostRef.current, {
+          type: "standard",
+          // GIS wants a pixel width, not a percentage — the container is a
+          // fixed-width column (see .auth-form-shell in index.css), so the
+          // measured width at mount time is stable.
+          width: hostRef.current.offsetWidth || 400,
+        });
+      })
+      .catch(() => {
+        // Leave the decorative button visible with nothing behind it rather
+        // than throwing — a network hiccup loading a third-party script
+        // shouldn't break the rest of the auth page.
+      });
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <>
@@ -123,14 +180,19 @@ function GoogleAuthButton() {
         </span>
         <span className="h-px flex-1 bg-black/10" />
       </div>
-      <button
-        type="button"
-        onClick={handleGoogleAuth}
-        className="flex h-12 w-full items-center justify-center gap-3 rounded-[4px] border border-black/20 bg-white text-sm font-semibold text-black transition-colors hover:bg-[#f4f3f0] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
-      >
-        <GoogleIcon />
-        Continue with Google
-      </button>
+      <div className="relative h-12 w-full">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none flex h-12 w-full items-center justify-center gap-3 rounded-[4px] border border-black/20 bg-white text-sm font-semibold text-black"
+        >
+          <GoogleIcon />
+          Continue with Google
+        </div>
+        <div
+          ref={hostRef}
+          className="absolute inset-0 overflow-hidden opacity-0 [&>div]:!w-full"
+        />
+      </div>
     </>
   );
 }

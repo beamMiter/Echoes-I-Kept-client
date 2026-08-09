@@ -68,6 +68,22 @@ export async function login({ email, password, role }) {
   }
 }
 
+// The server treats this as first-login, returning-user, or account-linking
+// purely based on what's already in its database — the client just forwards
+// the credential Google issued and persists whatever session comes back,
+// identical in shape to login()'s response.
+export async function loginWithGoogle(credential) {
+  try {
+    const { data } = await apiClient.post('/api/auth/google', { credential })
+    const user = toDisplayUser(data.data)
+    persistSession({ accessToken: data.accessToken, refreshToken: data.refreshToken, user })
+
+    return { user }
+  } catch (error) {
+    throw normalizeApiError(error)
+  }
+}
+
 export async function verifyEmail({ email, code }) {
   try {
     const { data } = await apiClient.post('/api/auth/verify-email', { email, code })
