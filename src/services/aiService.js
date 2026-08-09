@@ -82,6 +82,9 @@ export async function analyzePost(postId) {
         : 'review',
       concerns: asStringArray(data?.concerns),
       suggestedRejectionReason: asString(data?.suggestedRejectionReason),
+      // True when the post was too long to send in full, so the verdict is
+      // based on only the opening section.
+      truncated: data?.truncated === true,
     }
   } catch (error) {
     throw normalizeApiError(error)

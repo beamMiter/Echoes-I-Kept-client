@@ -206,6 +206,13 @@ function AdminContentModerationPage() {
                           </span>
                         </div>
 
+                        {analysis.truncated && (
+                          <p className="mt-3 rounded-sm bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                            This post was too long to send in full — the notes
+                            below cover only its opening section.
+                          </p>
+                        )}
+
                         {analysis.concerns.length > 0 ? (
                           <ul className="mt-3 list-inside list-disc space-y-1 text-sm text-muted-foreground">
                             {analysis.concerns.map((concern, index) => (
