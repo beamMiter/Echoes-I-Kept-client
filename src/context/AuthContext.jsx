@@ -38,6 +38,24 @@ export function AuthProvider({ children }) {
     }
   }
 
+  const loginWithGoogle = async (credential) => {
+    try {
+      setState((prev) => ({ ...prev, loading: true, error: null }))
+      const result = await authService.loginWithGoogle(credential)
+      setState((prev) => ({
+        ...prev,
+        user: result.user,
+        loading: false,
+        error: null,
+      }))
+      return { user: result.user }
+    } catch (err) {
+      const message = err.response?.data?.error || 'Google sign-in failed'
+      setState((prev) => ({ ...prev, loading: false, error: message }))
+      return { error: message, code: err.code }
+    }
+  }
+
   // Never logs the user in — the server requires email verification first,
   // so there's no session to persist yet. The caller (AuthPage) sends them
   // to the verify-code step next.
@@ -148,6 +166,7 @@ export function AuthProvider({ children }) {
       value={{
         state,
         login,
+        loginWithGoogle,
         signup,
         verifyEmail,
         resendVerificationCode,
