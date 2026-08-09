@@ -1,8 +1,18 @@
+// The introduction's hard cap. The textarea enforces it via maxLength, but
+// that only constrains typing — anything written to form state programmatically
+// (an accepted AI suggestion, say) has to clamp against this itself.
+export const DESCRIPTION_MAX_LENGTH = 120
+
 export const emptyArticleForm = {
   title: '',
   category: '',
   image: '',
   detailImage: '',
+  // No form control edits this, but it round-trips: read so the preview crops
+  // the hero the way the published page will, and sent back on save so the
+  // stored value survives. The server defaults it to 'center', so a payload
+  // that omits it silently re-crops the post on every edit.
+  detailImagePosition: '',
   description: '',
   content: '',
   artist: '',
@@ -18,6 +28,7 @@ export function getArticleForm(article) {
     category: article.category,
     image: article.image,
     detailImage: article.detailImage || '',
+    detailImagePosition: article.detailImagePosition || '',
     description: article.description,
     content: article.content,
     artist: article.artist || '',
