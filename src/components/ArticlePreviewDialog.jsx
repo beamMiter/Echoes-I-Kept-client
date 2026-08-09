@@ -28,7 +28,14 @@ function ArticlePreviewDialog({ form, authorName, authorBio, authorAvatar, onClo
 
   useEffect(() => {
     if (!pushedEntry.current) {
-      window.history.pushState({ articlePreview: true }, '')
+      // Spread the existing state rather than replacing it: react-router keeps
+      // { usr, key, idx } there and reads idx to compute the next index. A
+      // bare object strands it — Forward onto this orphan entry makes
+      // getIndex() undefined, and the next navigate() writes idx: NaN.
+      window.history.pushState(
+        { ...window.history.state, articlePreview: true },
+        '',
+      )
       pushedEntry.current = true
     }
 

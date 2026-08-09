@@ -53,7 +53,7 @@ function DiffField({ label, before, after, mode }) {
 // Shows the assistant's suggestion inline against what the author already
 // wrote, so accepting is a deliberate act. The editor is never overwritten
 // silently.
-function AiDiffDialog({ original, suggestion, notes = [], onCancel, onAccept }) {
+function AiDiffDialog({ original, suggestion, notes = [], staleEdits = false, onCancel, onAccept }) {
   // Escape cancels, never accepts — dismissing a dialog shouldn't overwrite
   // what the author wrote.
   useEffect(() => {
@@ -94,6 +94,14 @@ function AiDiffDialog({ original, suggestion, notes = [], onCancel, onAccept }) 
             ? 'Your form came back unchanged — it already reads cleanly.'
             : 'Only wording and formatting were touched. Nothing was added to what you wrote.'}
         </p>
+
+        {staleEdits && (
+          <p className="mt-3 rounded-sm bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            You kept editing while this was running, so the comparison below is
+            against your draft as it was when you asked. Using the suggestion
+            will replace anything you have written since.
+          </p>
+        )}
 
         {notes.length > 0 && (
           <ul className="mt-4 list-inside list-disc space-y-1 rounded-sm bg-[#F5F4F2] px-4 py-3 text-sm text-muted-foreground">

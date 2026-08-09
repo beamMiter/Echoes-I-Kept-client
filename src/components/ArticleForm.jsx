@@ -60,6 +60,12 @@ function ArticleForm({
   // Held here rather than applied directly — the author confirms in the dialog
   // before anything replaces what they wrote.
   const [suggestion, setSuggestion] = useState(null)
+  // What was actually sent to the model. The diff has to compare against this
+  // rather than live form state: the fields stay editable while the request is
+  // in flight, and diffing a snapshot-based suggestion against a form the
+  // author kept typing into would render their new text as a red "removal"
+  // the assistant never proposed.
+  const [suggestionBase, setSuggestionBase] = useState(null)
   const [presubmitResult, setPresubmitResult] = useState(null)
   const aiMenuRef = useRef(null)
   // Closing the menu doesn't cancel the request behind it, so without this both
@@ -84,12 +90,13 @@ function ArticleForm({
     }
 
     setPolishing(true)
+    const sent = {
+      content: form.content,
+      title: form.title,
+      description: form.description,
+    }
     try {
-      const result = await polishDraft({
-        content: form.content,
-        title: form.title,
-        description: form.description,
-      })
+      const result = await polishDraft(sent)
       // Clamped here rather than on accept, so the diff shows exactly what
       // will land in the form. Truncating after the author approved the full
       // text would apply something they never saw, cut mid-word.
@@ -97,6 +104,7 @@ function ArticleForm({
         ...result,
         description: result.description.slice(0, DESCRIPTION_MAX_LENGTH),
       })
+      setSuggestionBase(sent)
     } catch (error) {
       toast.error(error.message || 'The writing assistant is unavailable.')
     } finally {
@@ -104,12 +112,17 @@ function ArticleForm({
     }
   }
 
+  function dismissSuggestion() {
+    setSuggestion(null)
+    setSuggestionBase(null)
+  }
+
   function acceptSuggestion() {
     // Already clamped in handlePolish, so what's applied is what was shown.
     onChange('title', suggestion.title)
     onChange('description', suggestion.description)
     onChange('content', suggestion.content)
-    setSuggestion(null)
+    dismissSuggestion()
     toast.success('Suggested edit applied.')
   }
 
@@ -451,22 +464,38 @@ function ArticleForm({
 
       {footer}
 
-      {suggestion && (
+      {suggestion && suggestionBase && (
         <AiDiffDialog
-          original={{ title: form.title, description: form.description, content: form.content }}
+          original={suggestionBase}
           suggestion={suggestion}
           notes={suggestion.notes}
-          onCancel={() => setSuggestion(null)}
+          // Detects edits made while the request was in flight — accepting
+          // replaces all three fields wholesale, so those edits would go.
+          staleEdits={
+            form.title !== suggestionBase.title ||
+            form.description !== suggestionBase.description ||
+            form.content !== suggestionBase.content
+          }
+          onCancel={dismissSuggestion}
           onAccept={acceptSuggestion}
         />
       )}
 
-      {previewOpen && (
+      {/* Gated on the AI dialogs rather than just aiBusy: once a suggestion
+          has arrived aiBusy is false again, and AiDiffDialog has no focus
+          trap, so Tab could reach the Preview button behind it and stack a
+          second fixed-inset-0 z-50 overlay on top. One Escape then reaches
+          both document listeners and discards the unaccepted suggestion. */}
+      {previewOpen && !suggestion && !presubmitResult && (
         <ArticlePreviewDialog
           form={form}
-          authorName={previewAuthor?.name ?? authorName}
-          authorBio={previewAuthor?.bio ?? authorBio}
-          authorAvatar={previewAuthor?.avatar ?? authorAvatar}
+          // Branching on previewAuthor itself, not ??-ing each field: a member
+          // with no profile picture has authorAvatar null, and ?? would fall
+          // through to the *admin's* avatar — putting the admin's photo beside
+          // the member's name, the exact mixing previewAuthor exists to stop.
+          authorName={previewAuthor ? previewAuthor.name : authorName}
+          authorBio={previewAuthor ? previewAuthor.bio : authorBio}
+          authorAvatar={previewAuthor ? previewAuthor.avatar : authorAvatar}
           onClose={() => setPreviewOpen(false)}
         />
       )}
