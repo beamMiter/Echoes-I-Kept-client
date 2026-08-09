@@ -266,6 +266,17 @@ function AdminArticleManagementPage() {
             onImageUpload={handleImageUpload}
             onDetailImageUpload={handleDetailImageUpload}
             onAuthorBioChange={setAuthorBio}
+            // An admin edits other members' posts here, so the preview has to
+            // show the post's real byline rather than the admin's. On create
+            // there's no post yet and the admin is the author, so it falls
+            // through to the form's own author fields.
+            previewAuthor={
+              editingArticle && {
+                name: editingArticle.author,
+                bio: bioParagraphsToText(editingArticle.authorBio),
+                avatar: editingArticle.authorAvatar,
+              }
+            }
             footer={
               isEditing && (
                 <label className="flex flex-col gap-2">

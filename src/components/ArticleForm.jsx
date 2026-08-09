@@ -43,6 +43,13 @@ function ArticleForm({
   onDetailImageUpload,
   onAuthorBioChange,
   enablePresubmitCheck = false,
+  // The author the *preview* should show. Defaults to the person filling the
+  // form, which is right on the member side, but an admin editing someone
+  // else's post would otherwise see their own name, avatar and bio on a
+  // screen that promises "this is how the article will look". The editable
+  // bio field above stays tied to the current user either way — it saves to
+  // their own profile.
+  previewAuthor,
   footer,
   actions,
 }) {
@@ -78,13 +85,18 @@ function ArticleForm({
 
     setPolishing(true)
     try {
-      setSuggestion(
-        await polishDraft({
-          content: form.content,
-          title: form.title,
-          description: form.description,
-        }),
-      )
+      const result = await polishDraft({
+        content: form.content,
+        title: form.title,
+        description: form.description,
+      })
+      // Clamped here rather than on accept, so the diff shows exactly what
+      // will land in the form. Truncating after the author approved the full
+      // text would apply something they never saw, cut mid-word.
+      setSuggestion({
+        ...result,
+        description: result.description.slice(0, DESCRIPTION_MAX_LENGTH),
+      })
     } catch (error) {
       toast.error(error.message || 'The writing assistant is unavailable.')
     } finally {
@@ -93,11 +105,9 @@ function ArticleForm({
   }
 
   function acceptSuggestion() {
+    // Already clamped in handlePolish, so what's applied is what was shown.
     onChange('title', suggestion.title)
-    // maxLength doesn't apply to a programmatic write, and the assistant isn't
-    // told about the cap — an over-long intro would sail into state here and
-    // only fail later, server-side, with nothing in the UI explaining why.
-    onChange('description', suggestion.description.slice(0, DESCRIPTION_MAX_LENGTH))
+    onChange('description', suggestion.description)
     onChange('content', suggestion.content)
     setSuggestion(null)
     toast.success('Suggested edit applied.')
@@ -352,7 +362,12 @@ function ArticleForm({
             <button
               type="button"
               onClick={() => setPreviewOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-md border border-foreground px-3 py-1 text-xs font-medium hover:border-muted-foreground hover:text-muted-foreground"
+              // Both overlays are fixed inset-0 z-50 siblings, so a suggestion
+              // arriving while the preview is open would render completely
+              // hidden behind it — and one Escape press reaches both document
+              // listeners, discarding a paid-for result the author never saw.
+              disabled={aiBusy}
+              className="inline-flex items-center gap-1.5 rounded-md border border-foreground px-3 py-1 text-xs font-medium hover:border-muted-foreground hover:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Eye className="h-3.5 w-3.5" aria-hidden="true" />
               Preview
@@ -376,16 +391,30 @@ function ArticleForm({
           <button
             type="button"
             onClick={() => setAiMenuOpen((open) => !open)}
+            // Both handlers close the menu first, which unmounts the menu
+            // items carrying the loading labels — so without a busy state
+            // here, a multi-second model call looked like a dead click.
+            disabled={aiBusy}
             className={buttonClassName('ai')}
             aria-haspopup="menu"
             aria-expanded={aiMenuOpen}
+            aria-busy={aiBusy}
           >
-            <Sparkles className={`h-4 w-4 ${AI_ICON_HOVER_CLASS}`} aria-hidden="true" />
-            AI Assistant
-            <ChevronDown
-              className={`h-3.5 w-3.5 transition-transform duration-200 ${aiMenuOpen ? 'rotate-180' : ''}`}
+            <Sparkles
+              className={`h-4 w-4 ${AI_ICON_HOVER_CLASS} ${aiBusy ? 'animate-pulse' : ''}`}
               aria-hidden="true"
             />
+            {polishing
+              ? 'Reading your draft...'
+              : checkingSubmit
+                ? 'Checking your draft...'
+                : 'AI Assistant'}
+            {!aiBusy && (
+              <ChevronDown
+                className={`h-3.5 w-3.5 transition-transform duration-200 ${aiMenuOpen ? 'rotate-180' : ''}`}
+                aria-hidden="true"
+              />
+            )}
           </button>
 
           {aiMenuOpen && (
@@ -435,9 +464,9 @@ function ArticleForm({
       {previewOpen && (
         <ArticlePreviewDialog
           form={form}
-          authorName={authorName}
-          authorBio={authorBio}
-          authorAvatar={authorAvatar}
+          authorName={previewAuthor?.name ?? authorName}
+          authorBio={previewAuthor?.bio ?? authorBio}
+          authorAvatar={previewAuthor?.avatar ?? authorAvatar}
           onClose={() => setPreviewOpen(false)}
         />
       )}

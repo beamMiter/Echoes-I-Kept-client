@@ -47,7 +47,11 @@ function AiAdviceDialog({ title, description, badge, sections, onClose }) {
           <p className="mt-3 text-sm text-muted-foreground">{description}</p>
         )}
 
-        <div className="mt-5 flex-1 space-y-5 overflow-auto">
+        {/* min-h-0 is redundant — overflow-auto already zeroes a flex item's
+            automatic minimum size — but it's stated explicitly here to match
+            AiDiffDialog and to keep the scroll behaviour from looking
+            accidental. */}
+        <div className="mt-5 min-h-0 flex-1 space-y-5 overflow-auto">
           {sections.map((section) => {
             // A caller passing no items at all should land on emptyText, which
             // is the whole point of that prop — not throw on `.length`.
