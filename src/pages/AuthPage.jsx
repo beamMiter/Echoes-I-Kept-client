@@ -10,7 +10,8 @@ import { setPendingVerification } from "../utils/verifyCodeSession";
 import { loadGoogleIdentityScript } from "../utils/googleIdentity";
 
 const emptyForm = {
-  name: "",
+  firstName: "",
+  lastName: "",
   username: "",
   email: "",
   password: "",
@@ -232,7 +233,7 @@ function AuthPage() {
 
   const validateRegister = () => {
     const next = validateLogin();
-    if (!form.name.trim()) next.name = "Name is required.";
+    if (!form.firstName.trim()) next.firstName = "First name is required.";
     if (!form.username.trim()) next.username = "Username is required.";
     else if (!/^[a-zA-Z0-9_]+$/.test(form.username)) {
       next.username = "Use only letters, numbers, and underscores.";
@@ -284,7 +285,8 @@ function AuthPage() {
     if (Object.keys(nextErrors).length) return;
 
     const result = await signup({
-      name: form.name,
+      firstName: form.firstName,
+      lastName: form.lastName,
       username: form.username,
       email: form.email,
       password: form.password,
@@ -506,33 +508,49 @@ function AuthPage() {
                 onSubmit={handleRegister}
               >
                 <Field
-                  id="register-name"
+                  id="register-first-name"
                   type="text"
-                  autoComplete="name"
-                  label="Name"
-                  placeholder="Your name"
+                  autoComplete="given-name"
+                  label="First name"
+                  placeholder="Your first name"
                   icon={User}
-                  value={form.name}
-                  error={errors.name}
+                  value={form.firstName}
+                  error={errors.firstName}
                   disabled={state.loading}
                   onChange={(event) =>
-                    handleChange("name", event.target.value)
+                    handleChange("firstName", event.target.value)
                   }
                 />
                 <Field
-                  id="register-username"
+                  id="register-last-name"
                   type="text"
-                  autoComplete="username"
-                  label="Username"
-                  placeholder="your_username"
-                  icon={AtSign}
-                  value={form.username}
-                  error={errors.username}
+                  autoComplete="family-name"
+                  label="Last name (optional)"
+                  placeholder="Your last name"
+                  icon={User}
+                  value={form.lastName}
+                  error={errors.lastName}
                   disabled={state.loading}
                   onChange={(event) =>
-                    handleChange("username", event.target.value)
+                    handleChange("lastName", event.target.value)
                   }
                 />
+                <div className="sm:col-span-2">
+                  <Field
+                    id="register-username"
+                    type="text"
+                    autoComplete="username"
+                    label="Username"
+                    placeholder="your_username"
+                    icon={AtSign}
+                    value={form.username}
+                    error={errors.username}
+                    disabled={state.loading}
+                    onChange={(event) =>
+                      handleChange("username", event.target.value)
+                    }
+                  />
+                </div>
                 <div className="sm:col-span-2">
                   <Field
                     id="register-email"
