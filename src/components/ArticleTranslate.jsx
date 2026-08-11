@@ -12,7 +12,7 @@ const LANGUAGES = [
 function ArticleTranslate({ active, loadingLanguage, onSelect }) {
   return (
     <div
-      className="inline-flex items-center gap-1 rounded-full border border-[#D9D8D4] bg-white p-1 text-xs"
+      className="inline-flex items-center gap-1 rounded-md border border-[#D9D8D4] bg-white p-1 text-xs"
       role="group"
       aria-label="Translate article"
     >
@@ -26,7 +26,7 @@ function ArticleTranslate({ active, loadingLanguage, onSelect }) {
             type="button"
             onClick={() => onSelect(code)}
             disabled={isLoading}
-            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 font-medium transition-colors disabled:cursor-wait ${
+            className={`inline-flex items-center gap-1.5 rounded-sm px-3 py-1.5 font-medium transition-colors disabled:cursor-wait ${
               isActive
                 ? 'bg-foreground text-white'
                 : 'text-muted-foreground hover:text-foreground'
