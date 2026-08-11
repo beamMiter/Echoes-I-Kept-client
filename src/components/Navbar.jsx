@@ -16,6 +16,34 @@ import {
 import { useAuth } from "../context/useAuth";
 import NotificationBell from "./NotificationBell";
 
+// Google's profile picture URLs are otherwise valid but some browsers block
+// googleusercontent.com via ad-blockers/privacy extensions — fall back to the
+// same placeholder used for no-picture rather than showing a broken image.
+function UserAvatar({ src, size, iconSize }) {
+  const [failed, setFailed] = useState(false);
+
+  if (!src || failed) {
+    return (
+      <div
+        className={`flex ${size} shrink-0 items-center justify-center rounded-full bg-[#7B7974] text-white ring-2 ring-[#D9D8D4]`}
+        role="img"
+        aria-label="Profile placeholder"
+      >
+        <User className={iconSize} strokeWidth={1.5} />
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      alt="Profile"
+      onError={() => setFailed(true)}
+      className={`${size} shrink-0 rounded-full object-cover ring-2 ring-[#D9D8D4]`}
+    />
+  );
+}
+
 function Navbar() {
   const navigate = useNavigate();
   const { isAuthenticated, state, logout } = useAuth();
@@ -98,21 +126,11 @@ function Navbar() {
                 aria-expanded={dropdownOpen}
                 aria-haspopup="menu"
               >
-                {state.user.profilePic ? (
-                  <img
-                    src={state.user.profilePic}
-                    alt="Profile"
-                    className="h-10 w-10 shrink-0 rounded-full object-cover ring-2 ring-[#D9D8D4]"
-                  />
-                ) : (
-                  <div
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#7B7974] text-white ring-2 ring-[#D9D8D4]"
-                    role="img"
-                    aria-label="Profile placeholder"
-                  >
-                    <User className="h-5 w-5" strokeWidth={1.5} />
-                  </div>
-                )}
+                <UserAvatar
+                  src={state.user.profilePic}
+                  size="h-10 w-10"
+                  iconSize="h-5 w-5"
+                />
                 <span className="min-w-0 max-w-40 truncate">
                   {state.user.name}
                 </span>
@@ -253,21 +271,11 @@ function Navbar() {
             ) : isAuthenticated ? (
               <div className="space-y-1">
                 <div className="flex items-center py-2 mb-2">
-                  {state.user.profilePic ? (
-                    <img
-                      src={state.user.profilePic}
-                      alt="Profile"
-                      className="h-12 w-12 rounded-full object-cover ring-2 ring-[#D9D8D4]"
-                    />
-                  ) : (
-                    <div
-                      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#7B7974] text-white ring-2 ring-[#D9D8D4]"
-                      role="img"
-                      aria-label="Profile placeholder"
-                    >
-                      <User className="h-6 w-6" strokeWidth={1.5} />
-                    </div>
-                  )}
+                  <UserAvatar
+                    src={state.user.profilePic}
+                    size="h-12 w-12"
+                    iconSize="h-6 w-6"
+                  />
                   <span className="ml-3 text-base font-medium text-foreground">
                     {state.user.name}
                   </span>
