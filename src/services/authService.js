@@ -39,12 +39,11 @@ function persistSession({ accessToken, refreshToken, user }) {
 // Signup no longer returns a session — the server requires the account's
 // email to be verified (via a 6-digit code) before any login is allowed, so
 // there's nothing to persist here anymore.
-export async function signup({ name, username, email, password }) {
+export async function signup({ firstName, lastName, username, email, password }) {
   try {
-    const { firstName, lastName } = splitName(name)
     const { data } = await apiClient.post('/api/auth/signup', {
       firstName,
-      lastName,
+      lastName: lastName?.trim() || null,
       username,
       email,
       password,
