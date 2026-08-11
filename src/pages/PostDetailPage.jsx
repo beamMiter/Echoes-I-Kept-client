@@ -113,17 +113,23 @@ function PostDetailContent({ post, postId }) {
       return;
     }
 
-    if (!requireLogin()) return;
-
+    // No login gate up front — anonymous readers can read a language other
+    // readers already generated for free. The server only asks for a login
+    // (LOGIN_REQUIRED) when this specific post/language isn't cached yet,
+    // since generating a fresh translation is the part that costs money.
     setLoadingLanguage(code);
     try {
       const result = await translatePost(postId, code);
       setTranslations((prev) => ({ ...prev, [code]: result }));
       setLanguage(code);
     } catch (error) {
-      toast.error("Unable to translate this article", {
-        description: error.error,
-      });
+      if (error.code === "LOGIN_REQUIRED") {
+        setLoginDialogOpen(true);
+      } else {
+        toast.error("Unable to translate this article", {
+          description: error.error,
+        });
+      }
     } finally {
       setLoadingLanguage(null);
     }

@@ -2,7 +2,7 @@ import { Loader2 } from 'lucide-react'
 
 const LANGUAGES = [
   { code: 'original', label: 'Original' },
-  { code: 'th', label: 'ไทย' },
+  { code: 'th', label: 'th' },
   { code: 'en', label: 'English' },
 ]
 
