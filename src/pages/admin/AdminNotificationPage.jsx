@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import AdminLayout from '../components/AdminLayout'
-import LoadingSpinner from '../components/LoadingSpinner'
-import { useAuth } from '../context/useAuth'
+import AdminLayout from '../../components/AdminLayout'
+import LoadingSpinner from '../../components/LoadingSpinner'
+import { useAuth } from '../../context/useAuth'
 import {
   getNotifications,
   markNotificationAsRead,
-} from '../services/notificationService'
+} from '../../services/notificationService'
 
 function formatRelativeTime(value) {
   const diffMs = Date.now() - new Date(value).getTime()

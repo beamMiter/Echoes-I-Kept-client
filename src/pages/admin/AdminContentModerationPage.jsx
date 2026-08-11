@@ -1,16 +1,16 @@
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { Sparkles } from 'lucide-react'
-import AdminLayout from '../components/AdminLayout'
-import LoadingSpinner from '../components/LoadingSpinner'
-import ConfirmDialog from '../components/ConfirmDialog'
+import AdminLayout from '../../components/AdminLayout'
+import LoadingSpinner from '../../components/LoadingSpinner'
+import ConfirmDialog from '../../components/ConfirmDialog'
 import {
   approveArticle,
   getPendingArticles,
   rejectArticle,
-} from '../services/articleAdminService'
-import { analyzePost } from '../services/aiService'
-import { AI_ICON_HOVER_CLASS, buttonClassName } from '../utils/buttonStyles'
+} from '../../services/articleAdminService'
+import { analyzePost } from '../../services/aiService'
+import { AI_ICON_HOVER_CLASS, buttonClassName } from '../../utils/buttonStyles'
 
 function getErrorMessage(error, fallback) {
   return error.response?.data?.error || error.error || fallback

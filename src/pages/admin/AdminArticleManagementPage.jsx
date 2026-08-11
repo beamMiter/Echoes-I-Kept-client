@@ -1,27 +1,27 @@
 import { useEffect, useMemo, useState } from 'react'
 import { ChevronDown, Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
-import AdminLayout from '../components/AdminLayout'
-import LoadingSpinner from '../components/LoadingSpinner'
-import ArticleForm from '../components/ArticleForm'
-import ConfirmDialog from '../components/ConfirmDialog'
+import AdminLayout from '../../components/AdminLayout'
+import LoadingSpinner from '../../components/LoadingSpinner'
+import ArticleForm from '../../components/ArticleForm'
+import ConfirmDialog from '../../components/ConfirmDialog'
 import {
   createAdminArticle,
   deleteAdminArticle,
   getAdminArticles,
   updateAdminArticle,
   uploadArticleImage,
-} from '../services/articleAdminService'
-import { getAdminCategories } from '../services/categoryAdminService'
-import { getStatusMeta } from '../utils/postStatus'
+} from '../../services/articleAdminService'
+import { getAdminCategories } from '../../services/categoryAdminService'
+import { getStatusMeta } from '../../utils/postStatus'
 import {
   emptyArticleForm,
   getArticleForm,
   validateArticleForm,
-} from '../utils/articleForm'
-import { useAuth } from '../context/useAuth'
-import { buttonClassName } from '../utils/buttonStyles'
-import { bioParagraphsToText, bioTextToParagraphs } from '../utils/bio'
+} from '../../utils/articleForm'
+import { useAuth } from '../../context/useAuth'
+import { buttonClassName } from '../../utils/buttonStyles'
+import { bioParagraphsToText, bioTextToParagraphs } from '../../utils/bio'
 
 const emptyForm = { ...emptyArticleForm, category: 'Pop' }
 
