@@ -50,7 +50,12 @@ export function AuthProvider({ children }) {
       }))
       return { user: result.user }
     } catch (err) {
-      const message = err.response?.data?.error || 'Google sign-in failed'
+      // err.response missing means the request never got an HTTP response at
+      // all (server unreachable, CORS block, timeout) — distinct from a real
+      // server-side rejection, and worth telling the user apart from it.
+      const message = err.response
+        ? err.response.data?.error || 'Google sign-in failed'
+        : "Couldn't reach the server — check it's running and try again"
       setState((prev) => ({ ...prev, loading: false, error: message }))
       return { error: message, code: err.code }
     }
