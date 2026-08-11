@@ -15,7 +15,11 @@ function getProfileForm(user) {
   }
 }
 
-function ProfilePage() {
+// Keyed by user id in ProfilePage below so the form fully remounts (and
+// re-derives from getProfileForm) whenever the logged-in account changes —
+// otherwise the useState initializer only runs once, and the form would keep
+// showing whoever's data it first mounted with, bio included.
+function ProfileForm() {
   const { state, updateProfile } = useAuth()
   const [form, setForm] = useState(() => getProfileForm(state.user))
   const [errors, setErrors] = useState({})
@@ -199,6 +203,11 @@ function ProfilePage() {
       </form>
     </AccountLayout>
   )
+}
+
+function ProfilePage() {
+  const { state } = useAuth()
+  return <ProfileForm key={state.user?.id ?? 'anonymous'} />
 }
 
 export default ProfilePage
