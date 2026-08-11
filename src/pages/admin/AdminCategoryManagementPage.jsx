@@ -1,17 +1,17 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Pencil, Plus, Search, Trash2, X } from 'lucide-react'
 import { toast } from 'sonner'
-import AdminLayout from '../components/AdminLayout'
-import LoadingSpinner from '../components/LoadingSpinner'
-import FormSection from '../components/FormSection'
+import AdminLayout from '../../components/AdminLayout'
+import LoadingSpinner from '../../components/LoadingSpinner'
+import FormSection from '../../components/FormSection'
 import {
   createAdminCategory,
   deleteAdminCategory,
   getAdminCategories,
   updateAdminCategory,
-} from '../services/categoryAdminService'
-import { getAdminArticles } from '../services/articleAdminService'
-import { buttonClassName } from '../utils/buttonStyles'
+} from '../../services/categoryAdminService'
+import { getAdminArticles } from '../../services/articleAdminService'
+import { buttonClassName } from '../../utils/buttonStyles'
 
 const emptyForm = {
   name: '',

@@ -9,18 +9,18 @@ import {
   X,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import AdminLayout from '../components/AdminLayout'
-import LoadingSpinner from '../components/LoadingSpinner'
-import FormSection from '../components/FormSection'
+import AdminLayout from '../../components/AdminLayout'
+import LoadingSpinner from '../../components/LoadingSpinner'
+import FormSection from '../../components/FormSection'
 import {
   createAdminMember,
   deleteAdminMember,
   getAdminMembers,
   updateAdminMember,
-} from '../services/authService'
-import { useAuth } from '../context/useAuth'
-import { getPasswordStrengthError } from '../utils/passwordValidation'
-import { buttonClassName } from '../utils/buttonStyles'
+} from '../../services/authService'
+import { useAuth } from '../../context/useAuth'
+import { getPasswordStrengthError } from '../../utils/passwordValidation'
+import { buttonClassName } from '../../utils/buttonStyles'
 
 const emptyForm = {
   name: '',

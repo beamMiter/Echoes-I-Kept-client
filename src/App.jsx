@@ -17,19 +17,19 @@ const AdminLoginPage = lazy(() => import("./pages/admin/AdminLoginPage"));
 const AuthPage = lazy(() => import("./pages/AuthPage"));
 const PostDetailPage = lazy(() => import("./pages/PostDetailPage"));
 const AdminArticleManagementPage = lazy(
-  () => import("./pages/AdminArticleManagementPage"),
+  () => import("./pages/admin/AdminArticleManagementPage"),
 );
 const AdminCategoryManagementPage = lazy(
-  () => import("./pages/AdminCategoryManagementPage"),
+  () => import("./pages/admin/AdminCategoryManagementPage"),
 );
 const AdminMemberManagementPage = lazy(
-  () => import("./pages/AdminMemberManagementPage"),
+  () => import("./pages/admin/AdminMemberManagementPage"),
 );
 const AdminNotificationPage = lazy(
-  () => import("./pages/AdminNotificationPage"),
+  () => import("./pages/admin/AdminNotificationPage"),
 );
 const AdminContentModerationPage = lazy(
-  () => import("./pages/AdminContentModerationPage"),
+  () => import("./pages/admin/AdminContentModerationPage"),
 );
 const MyArticlesPage = lazy(() => import("./pages/MyArticlesPage"));
 const MyArticleFormPage = lazy(() => import("./pages/MyArticleFormPage"));
