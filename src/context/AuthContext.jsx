@@ -110,16 +110,16 @@ export function AuthProvider({ children }) {
       setState((prev) => ({ ...prev, loading: false, error: null }))
       return null
     } catch (err) {
-      const message = err.response?.data?.error || 'Unable to request a reset code'
+      const message = err.response?.data?.error || 'Unable to request a reset link'
       setState((prev) => ({ ...prev, loading: false, error: message }))
       return { error: message }
     }
   }
 
-  const resetPasswordWithCode = async (payload) => {
+  const resetPasswordWithToken = async (payload) => {
     try {
       setState((prev) => ({ ...prev, loading: true, error: null }))
-      const result = await authService.resetPasswordWithCode(payload)
+      const result = await authService.resetPasswordWithToken(payload)
       setState((prev) => ({ ...prev, user: result.user, loading: false, error: null }))
       return { user: result.user }
     } catch (err) {
@@ -176,7 +176,7 @@ export function AuthProvider({ children }) {
         verifyEmail,
         resendVerificationCode,
         forgotPassword,
-        resetPasswordWithCode,
+        resetPasswordWithToken,
         updateProfile,
         resetPassword,
         logout,

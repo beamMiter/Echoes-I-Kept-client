@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Loader2, LockKeyhole } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import OtpCodeInput from "../components/OtpCodeInput";
-import { getPasswordStrengthError } from "../utils/passwordValidation";
 import { useAuth } from "../context/useAuth";
 import {
   clearPendingVerification,
@@ -14,56 +13,15 @@ import {
 
 const RESEND_COOLDOWN_SECONDS = 60;
 
-const inputStyles =
-  "h-12 w-full border-0 border-b border-black/20 bg-transparent pl-9 pr-3 text-sm outline-none transition-colors placeholder:text-black/35 focus:border-black disabled:cursor-not-allowed disabled:opacity-60";
-
-function PasswordField({ error, icon: Icon, label, ...props }) {
-  const errorId = error ? `${props.id}-error` : undefined;
-
-  return (
-    <div>
-      <label
-        htmlFor={props.id}
-        className="mb-1 block text-xs font-semibold text-black/60"
-      >
-        {label}
-      </label>
-      <div className="relative">
-        <Icon
-          aria-hidden="true"
-          className="absolute left-1 top-1/2 -translate-y-1/2 text-black/45"
-          size={17}
-          strokeWidth={1.7}
-        />
-        <input
-          {...props}
-          aria-invalid={Boolean(error)}
-          aria-describedby={errorId}
-          className={`${inputStyles} ${error ? "border-red-500" : ""}`}
-        />
-      </div>
-      {error && (
-        <p
-          id={errorId}
-          className="mt-2 text-xs font-medium leading-relaxed text-[#9f3d32]"
-          role="alert"
-        >
-          {error}
-        </p>
-      )}
-    </div>
-  );
-}
-
+// Signup email verification only — password reset moved to a link emailed
+// directly (see NewPasswordPage.jsx), so this page no longer branches on a
+// "purpose".
 function VerifyCodePage() {
   const navigate = useNavigate();
-  const { verifyEmail, resendVerificationCode, forgotPassword, resetPasswordWithCode, state } =
-    useAuth();
+  const { verifyEmail, resendVerificationCode, state } = useAuth();
   const [pending] = useState(() => getPendingVerification());
 
   const [code, setCode] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [errors, setErrors] = useState({});
   const [apiError, setApiError] = useState("");
   const [cooldown, setCooldown] = useState(RESEND_COOLDOWN_SECONDS);
@@ -84,13 +42,9 @@ function VerifyCodePage() {
 
   if (!pending) return null;
 
-  const isPasswordReset = pending.purpose === "password_reset";
-
   const handleResend = async () => {
     setApiError("");
-    const result = isPasswordReset
-      ? await forgotPassword({ email: pending.email })
-      : await resendVerificationCode({ email: pending.email });
+    const result = await resendVerificationCode({ email: pending.email });
 
     if (result?.error) {
       setApiError(result.error);
@@ -108,38 +62,23 @@ function VerifyCodePage() {
     event.preventDefault();
     setApiError("");
 
-    const nextErrors = {};
-    if (!/^\d{6}$/.test(code)) nextErrors.code = "Enter the 6-digit code.";
-    if (isPasswordReset) {
-      const passwordError = getPasswordStrengthError(newPassword);
-      if (passwordError) nextErrors.newPassword = passwordError;
-      if (!confirmPassword.trim()) {
-        nextErrors.confirmPassword = "Please confirm your password.";
-      } else if (newPassword !== confirmPassword) {
-        nextErrors.confirmPassword = "Passwords do not match.";
-      }
+    if (!/^\d{6}$/.test(code)) {
+      setErrors({ code: "Enter the 6-digit code." });
+      return;
     }
-    setErrors(nextErrors);
-    if (Object.keys(nextErrors).length) return;
+    setErrors({});
 
-    const result = isPasswordReset
-      ? await resetPasswordWithCode({ email: pending.email, code, newPassword })
-      : await verifyEmail({ email: pending.email, code });
+    const result = await verifyEmail({ email: pending.email, code });
 
     if (result?.error) {
       setApiError(result.error);
-      toast.error(
-        isPasswordReset ? "Unable to reset your password" : "Unable to verify your email",
-        { description: result.error },
-      );
+      toast.error("Unable to verify your email", { description: result.error });
       return;
     }
 
     clearPendingVerification();
-    toast.success(isPasswordReset ? "Password updated" : "Email verified", {
-      description: isPasswordReset
-        ? "You're signed in with your new password."
-        : "Your listening journal is ready.",
+    toast.success("Email verified", {
+      description: "Your listening journal is ready.",
     });
     navigate("/");
   };
@@ -152,7 +91,7 @@ function VerifyCodePage() {
           <div className="auth-form-shell mx-auto">
             <div className="text-center">
               <h1 className="auth-title mx-auto text-3xl sm:text-4xl">
-                {isPasswordReset ? "Reset your password" : "Verify your email"}
+                Verify your email
               </h1>
               <p className="auth-copy mx-auto">
                 Enter the 6-digit code we sent to{" "}
@@ -177,41 +116,6 @@ function VerifyCodePage() {
                 disabled={state.loading}
               />
 
-              {isPasswordReset && (
-                <>
-                  <PasswordField
-                    id="new-password"
-                    type="password"
-                    autoComplete="new-password"
-                    label="New password"
-                    placeholder="At least 8 characters, including ."
-                    icon={LockKeyhole}
-                    value={newPassword}
-                    error={errors.newPassword}
-                    disabled={state.loading}
-                    onChange={(event) => {
-                      setNewPassword(event.target.value);
-                      setErrors((prev) => ({ ...prev, newPassword: "" }));
-                    }}
-                  />
-                  <PasswordField
-                    id="confirm-new-password"
-                    type="password"
-                    autoComplete="new-password"
-                    label="Confirm new password"
-                    placeholder="Repeat password"
-                    icon={LockKeyhole}
-                    value={confirmPassword}
-                    error={errors.confirmPassword}
-                    disabled={state.loading}
-                    onChange={(event) => {
-                      setConfirmPassword(event.target.value);
-                      setErrors((prev) => ({ ...prev, confirmPassword: "" }));
-                    }}
-                  />
-                </>
-              )}
-
               <button
                 type="submit"
                 disabled={state.loading}
@@ -220,7 +124,7 @@ function VerifyCodePage() {
                 {state.loading && (
                   <Loader2 aria-hidden="true" className="animate-spin" size={17} />
                 )}
-                {isPasswordReset ? "Reset password" : "Verify email"}
+                Verify email
               </button>
             </form>
 

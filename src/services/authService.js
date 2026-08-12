@@ -114,11 +114,10 @@ export async function forgotPassword({ email }) {
   }
 }
 
-export async function resetPasswordWithCode({ email, code, newPassword }) {
+export async function resetPasswordWithToken({ token, newPassword }) {
   try {
-    const { data } = await apiClient.post('/api/auth/reset-password-with-code', {
-      email,
-      code,
+    const { data } = await apiClient.post('/api/auth/reset-password', {
+      token,
       newPassword,
     })
     const user = toDisplayUser(data.data)
