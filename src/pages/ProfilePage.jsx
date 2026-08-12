@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import AccountLayout from '../components/AccountLayout'
 import { useAuth } from '../context/useAuth'
 import { bioParagraphsToText, bioTextToParagraphs } from '../utils/bio'
+import { buttonClassName } from '../utils/buttonStyles'
 
 function getProfileForm(user) {
   return {
@@ -107,7 +108,7 @@ function ProfileForm() {
               <User className="h-10 w-10 md:h-12 md:w-12" strokeWidth={1.5} />
             </div>
           )}
-          <label className="inline-flex h-10 cursor-pointer items-center justify-center rounded-md border border-foreground px-5 text-center text-xs font-medium hover:border-muted-foreground hover:text-muted-foreground">
+          <label className={buttonClassName('secondary', 'cursor-pointer')}>
             Upload profile picture
             <input
               type="file"
@@ -195,7 +196,7 @@ function ProfileForm() {
           <button
             type="submit"
             disabled={state.loading}
-            className="inline-flex h-10 min-w-[120px] items-center justify-center rounded-md bg-foreground px-6 text-xs font-medium text-white hover:bg-muted-foreground disabled:opacity-60 md:h-12"
+            className={buttonClassName('primary', 'min-w-[120px]')}
           >
             Save
           </button>
