@@ -22,6 +22,7 @@ function ArticleContent({
   authorBio = [],
   authorAvatar,
   placeholder = false,
+  headerActions,
   children,
 }) {
   const [loadedHeroImage, setLoadedHeroImage] = useState(null)
@@ -68,15 +69,18 @@ function ArticleContent({
       <div className="flex flex-col gap-6 xl:flex-row">
         <div className="space-y-8 xl:w-3/4">
           <article className="px-4">
-            <div className="mb-2 flex items-center gap-3">
-              <span
-                className={`shrink-0 text-sm font-semibold ${getCategoryTextStyles(category)}`}
-              >
-                {category || (placeholder ? 'Uncategorized' : '')}
-              </span>
-              {dateLabel && (
-                <span className="shrink-0 text-sm text-muted-foreground">{dateLabel}</span>
-              )}
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <span
+                  className={`shrink-0 text-sm font-semibold ${getCategoryTextStyles(category)}`}
+                >
+                  {category || (placeholder ? 'Uncategorized' : '')}
+                </span>
+                {dateLabel && (
+                  <span className="shrink-0 text-sm text-muted-foreground">{dateLabel}</span>
+                )}
+              </div>
+              {headerActions}
             </div>
 
             <h1 className="font-display text-3xl font-medium">

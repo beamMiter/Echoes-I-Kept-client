@@ -68,6 +68,19 @@ export async function checkBeforeSubmit({ content, title, artist, bestPick, desc
   }
 }
 
+export async function translatePost(postId, targetLanguage) {
+  try {
+    const { data } = await apiClient.post('/api/ai/translate', { postId, targetLanguage })
+    return {
+      title: asString(data?.title),
+      description: asString(data?.description),
+      content: asString(data?.content),
+    }
+  } catch (error) {
+    throw normalizeApiError(error)
+  }
+}
+
 const RECOMMENDATIONS = ['approve', 'review', 'reject']
 
 export async function analyzePost(postId) {

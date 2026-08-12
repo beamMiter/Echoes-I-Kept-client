@@ -8,10 +8,12 @@ import LoadingSpinner from "../components/LoadingSpinner";
 import ArticleContent from "../components/ArticleContent";
 import ArticleLikeShare from "../components/ArticleLikeShare";
 import ArticleComments from "../components/ArticleComments";
+import ArticleTranslate from "../components/ArticleTranslate";
 import AuthRequiredDialog from "../components/ui/AuthRequiredDialog";
 import { fetchPublishedPostById } from "../services/postsService";
 import { fetchComments, createComment } from "../services/commentsService";
 import { likePost, unlikePost } from "../services/likesService";
+import { translatePost } from "../services/aiService";
 import { useAuth } from "../context/useAuth";
 
 const pageShellClassName = "no-image-drag flex flex-col min-h-screen";
@@ -94,6 +96,45 @@ function PostDetailContent({ post, postId }) {
   const [comments, setComments] = useState([]);
   const [loginDialogOpen, setLoginDialogOpen] = useState(false);
 
+  const [language, setLanguage] = useState("original");
+  const [loadingLanguage, setLoadingLanguage] = useState(null);
+  // Keyed by language code so switching back to one already fetched this
+  // session (including "original") is instant and doesn't re-spend a quota
+  // slot on a call the server would've served from its own cache anyway.
+  const [translations, setTranslations] = useState({
+    original: { title: post.title, description: post.description, content },
+  });
+
+  const handleSelectLanguage = async (code) => {
+    if (code === language || loadingLanguage) return;
+
+    if (translations[code]) {
+      setLanguage(code);
+      return;
+    }
+
+    // No login gate up front — anonymous readers can read a language other
+    // readers already generated for free. The server only asks for a login
+    // (LOGIN_REQUIRED) when this specific post/language isn't cached yet,
+    // since generating a fresh translation is the part that costs money.
+    setLoadingLanguage(code);
+    try {
+      const result = await translatePost(postId, code);
+      setTranslations((prev) => ({ ...prev, [code]: result }));
+      setLanguage(code);
+    } catch (error) {
+      if (error.code === "LOGIN_REQUIRED") {
+        setLoginDialogOpen(true);
+      } else {
+        toast.error("Unable to translate this article", {
+          description: error.error,
+        });
+      }
+    } finally {
+      setLoadingLanguage(null);
+    }
+  };
+
   useEffect(() => {
     let cancelled = false;
 
@@ -157,19 +198,28 @@ function PostDetailContent({ post, postId }) {
       })
     : "";
 
+  const displayed = translations[language];
+
   return (
     <main className="flex-grow">
       <ArticleContent
         category={post?.category}
         dateLabel={dateLabel}
-        title={post?.title}
-        description={post?.description}
-        content={content}
+        title={displayed.title}
+        description={displayed.description}
+        content={displayed.content}
         heroImage={heroImage}
         heroImagePosition={heroImagePosition}
         authorName={post.author}
         authorBio={post.authorBio}
         authorAvatar={post.authorAvatar}
+        headerActions={
+          <ArticleTranslate
+            active={language}
+            loadingLanguage={loadingLanguage}
+            onSelect={handleSelectLanguage}
+          />
+        }
       >
         <ArticleLikeShare
           likesAmount={likesAmount}
