@@ -206,12 +206,14 @@ function AuthPage() {
   const [form, setForm] = useState(emptyForm);
   const [errors, setErrors] = useState({});
   const [apiError, setApiError] = useState("");
+  const [resetLinkSent, setResetLinkSent] = useState(false);
 
   const switchMode = (nextMode) => {
     const nextPath = pathByMode[nextMode] || "/login";
     setForm(emptyForm);
     setErrors({});
     setApiError("");
+    setResetLinkSent(false);
     if (location.pathname !== nextPath) navigate(nextPath);
   };
 
@@ -325,17 +327,15 @@ function AuthPage() {
     const result = await forgotPassword({ email });
     if (result?.error) {
       setApiError(result.error);
-      toast.error("Unable to request a code", {
+      toast.error("Unable to request a reset link", {
         description: result.error,
       });
       return;
     }
 
-    setPendingVerification({ email, purpose: "password_reset" });
-    toast.success("Check your inbox", {
-      description: "If an account exists, a code was sent there.",
-    });
-    navigate("/verify-code");
+    // No navigation — the rest of this flow happens by clicking the link in
+    // the email, on this device or another, whenever the user gets to it.
+    setResetLinkSent(true);
   };
 
   const isRegister = mode === "register";
@@ -353,46 +353,70 @@ function AuthPage() {
           >
             {mode === "forgot" ? (
               <div className="auth-form-shell">
-                <div className="text-center">
-                  <h1 className="auth-title mx-auto">Forgot password</h1>
-                  <p className="auth-copy mx-auto">
-                    Enter your email to receive reset instructions
-                  </p>
-                </div>
+                {resetLinkSent ? (
+                  <div className="text-center">
+                    <h1 className="auth-title mx-auto">Check your inbox</h1>
+                    <p className="auth-copy mx-auto">
+                      If an account exists for{" "}
+                      <span className="font-semibold text-black">
+                        {form.email.trim().toLowerCase()}
+                      </span>
+                      , we've sent a link there to reset your password. It
+                      works once and expires soon, so use it before
+                      requesting another.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => switchMode("login")}
+                      className="mt-7 font-semibold text-black underline underline-offset-4 transition-colors hover:text-black/50"
+                    >
+                      Back to log in
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="text-center">
+                      <h1 className="auth-title mx-auto">Forgot password</h1>
+                      <p className="auth-copy mx-auto">
+                        Enter your email to receive a reset link
+                      </p>
+                    </div>
 
-                <form
-                  className="mt-8 space-y-7"
-                  onSubmit={handleForgotPassword}
-                >
-                  <Field
-                    id="forgot-email"
-                    type="email"
-                    autoComplete="email"
-                    label="Email"
-                    placeholder="you@example.com"
-                    icon={Mail}
-                    value={form.email}
-                    error={errors.email}
-                    disabled={state.loading}
-                    onChange={(event) =>
-                      handleChange("email", event.target.value)
-                    }
-                  />
-                  <SubmitButton loading={state.loading}>
-                    Send reset code
-                  </SubmitButton>
-                </form>
+                    <form
+                      className="mt-8 space-y-7"
+                      onSubmit={handleForgotPassword}
+                    >
+                      <Field
+                        id="forgot-email"
+                        type="email"
+                        autoComplete="email"
+                        label="Email"
+                        placeholder="you@example.com"
+                        icon={Mail}
+                        value={form.email}
+                        error={errors.email}
+                        disabled={state.loading}
+                        onChange={(event) =>
+                          handleChange("email", event.target.value)
+                        }
+                      />
+                      <SubmitButton loading={state.loading}>
+                        Send reset link
+                      </SubmitButton>
+                    </form>
 
-                <div className="mt-7 flex flex-wrap items-center justify-center gap-2 text-sm text-black/55">
-                  <span>Remember your password?</span>
-                  <button
-                    type="button"
-                    onClick={() => switchMode("login")}
-                    className="font-semibold text-black underline underline-offset-4 transition-colors hover:text-black/50"
-                  >
-                    Log in
-                  </button>
-                </div>
+                    <div className="mt-7 flex flex-wrap items-center justify-center gap-2 text-sm text-black/55">
+                      <span>Remember your password?</span>
+                      <button
+                        type="button"
+                        onClick={() => switchMode("login")}
+                        className="font-semibold text-black underline underline-offset-4 transition-colors hover:text-black/50"
+                      >
+                        Log in
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             ) : (
               <div className="auth-form-shell">

@@ -35,6 +35,7 @@ const MyArticlesPage = lazy(() => import("./pages/MyArticlesPage"));
 const MyArticleFormPage = lazy(() => import("./pages/MyArticleFormPage"));
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage"));
+const NewPasswordPage = lazy(() => import("./pages/NewPasswordPage"));
 const VerifyCodePage = lazy(() => import("./pages/VerifyCodePage"));
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 
@@ -189,6 +190,14 @@ function App() {
             element={
               <GuestRoute>
                 <VerifyCodePage />
+              </GuestRoute>
+            }
+          />
+          <Route
+            path="/reset-password/:token"
+            element={
+              <GuestRoute>
+                <NewPasswordPage />
               </GuestRoute>
             }
           />
