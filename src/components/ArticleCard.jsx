@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { useState } from "react";
 import { ImageOff } from "lucide-react";
 import { getCategoryTagStyles } from "../utils/categoryStyles";
+import { defaultAvatarUrl } from "../utils/defaultAvatar";
 
 function ArticleCard({
   id,
@@ -70,7 +71,7 @@ function ArticleCard({
         <div className="flex items-center gap-2 pt-1 text-[13px] font-medium text-muted-foreground">
           <img
             className="h-8 w-8 rounded-full object-cover"
-            src={authorAvatar || "/avatars/anime.jpg"}
+            src={authorAvatar || defaultAvatarUrl(author)}
             alt={author || "Author"}
           />
           <span className="text-foreground">{author || "Unknown author"}</span>
