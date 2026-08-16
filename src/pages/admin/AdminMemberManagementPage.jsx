@@ -9,15 +9,18 @@ import {
   X,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import AdminLayout from '../components/AdminLayout'
+import AdminLayout from '../../components/AdminLayout'
+import LoadingSpinner from '../../components/LoadingSpinner'
+import FormSection from '../../components/FormSection'
 import {
   createAdminMember,
   deleteAdminMember,
   getAdminMembers,
   updateAdminMember,
-} from '../services/authService'
-import { useAuth } from '../context/useAuth'
-import { getPasswordStrengthError } from '../utils/passwordValidation'
+} from '../../services/authService'
+import { useAuth } from '../../context/useAuth'
+import { getPasswordStrengthError } from '../../utils/passwordValidation'
+import { buttonClassName } from '../../utils/buttonStyles'
 
 const emptyForm = {
   name: '',
@@ -231,7 +234,7 @@ function AdminMemberManagementPage() {
             <button
               type="button"
               onClick={closeForm}
-              className="rounded-full border border-foreground px-8 py-2 text-sm font-medium hover:border-muted-foreground hover:text-muted-foreground"
+              className={buttonClassName('secondary')}
             >
               Cancel
             </button>
@@ -239,25 +242,25 @@ function AdminMemberManagementPage() {
               type="button"
               onClick={submitMember}
               disabled={submitting}
-              className="rounded-full bg-foreground px-8 py-2 text-sm font-medium text-white hover:bg-muted-foreground disabled:cursor-not-allowed disabled:opacity-60"
+              className={buttonClassName('primary')}
             >
               {submitting ? 'Saving...' : 'Save'}
             </button>
           </>
         }
       >
-        <section className="max-w-[760px]">
+        <section className="mx-auto w-full max-w-[1100px]">
           {apiError && (
             <div className="mb-5 rounded-sm bg-red-500 px-5 py-3 text-sm font-medium text-white">
               {apiError}
             </div>
           )}
 
-          <div className="space-y-6">
-            <div>
-              <p className="mb-3 text-sm font-medium text-muted-foreground">
-                Profile picture
-              </p>
+          <div className="space-y-8">
+            <FormSection
+              title="Profile picture"
+              description="Shown next to this member's name across the site."
+            >
               <div className="flex items-center gap-6">
                 {form.profilePic ? (
                   <img
@@ -275,113 +278,149 @@ function AdminMemberManagementPage() {
                   onChange={(event) =>
                     updateForm('profilePic', event.target.value)
                   }
-                  className="h-10 w-[420px] max-w-full rounded-sm border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:border-muted-foreground"
+                  className="h-10 w-full max-w-[420px] rounded-sm border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:border-muted-foreground"
                   placeholder="Avatar URL"
                 />
               </div>
-            </div>
+            </FormSection>
 
-            <label className="block space-y-2">
-              <span className="text-sm font-medium text-muted-foreground">
-                Name
-              </span>
-              <input
-                value={form.name}
-                onChange={(event) => updateForm('name', event.target.value)}
-                className="h-10 w-full rounded-sm border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:border-muted-foreground"
-                placeholder="Member name"
-              />
-              {errors.name && (
-                <span className="text-xs text-red-500">{errors.name}</span>
-              )}
-            </label>
+            <div className="border-t border-border" />
 
-            <label className="block space-y-2">
-              <span className="text-sm font-medium text-muted-foreground">
-                Username
-              </span>
-              <input
-                value={form.username}
-                onChange={(event) => updateForm('username', event.target.value)}
-                className="h-10 w-full rounded-sm border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:border-muted-foreground"
-                placeholder="username"
-              />
-              {errors.username && (
-                <span className="text-xs text-red-500">{errors.username}</span>
-              )}
-            </label>
+            <FormSection
+              title="Account details"
+              description="Name and sign-in identifiers for this member."
+            >
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="flex flex-col gap-2">
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Name
+                  </span>
+                  <input
+                    value={form.name}
+                    onChange={(event) => updateForm('name', event.target.value)}
+                    className="h-10 w-full rounded-sm border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:border-muted-foreground"
+                    placeholder="Member name"
+                  />
+                  {errors.name && (
+                    <span className="text-xs text-red-500">{errors.name}</span>
+                  )}
+                </label>
 
-            <label className="block space-y-2">
-              <span className="text-sm font-medium text-muted-foreground">
-                Email
-              </span>
-              <input
-                type="email"
-                value={form.email}
-                onChange={(event) => updateForm('email', event.target.value)}
-                className="h-10 w-full rounded-sm border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:border-muted-foreground"
-                placeholder="member@example.com"
-              />
-              {errors.email && (
-                <span className="text-xs text-red-500">{errors.email}</span>
-              )}
-            </label>
-
-            <label className="block space-y-2">
-              <span className="text-sm font-medium text-muted-foreground">
-                Password
-              </span>
-              <input
-                type="password"
-                value={form.password}
-                onChange={(event) => updateForm('password', event.target.value)}
-                className="h-10 w-full rounded-sm border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:border-muted-foreground"
-                placeholder={
-                  isEditing ? 'Leave blank to keep current password' : 'At least 8 characters, including .'
-                }
-              />
-              {errors.password && (
-                <span className="text-xs text-red-500">{errors.password}</span>
-              )}
-            </label>
-
-            <label className="block space-y-2">
-              <span className="text-sm font-medium text-muted-foreground">
-                Role
-              </span>
-              <div className="relative w-[360px] max-w-full">
-                <select
-                  value={form.role}
-                  onChange={(event) => updateForm('role', event.target.value)}
-                  className="h-10 w-full appearance-none rounded-sm border border-input bg-background px-3 pr-10 text-sm focus-visible:outline-none focus-visible:border-muted-foreground"
-                >
-                  {roleOptions.map((role) => (
-                    <option key={role.value} value={role.value}>
-                      {role.label}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown
-                  className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-                  aria-hidden="true"
-                />
+                <label className="flex flex-col gap-2">
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Username
+                  </span>
+                  <input
+                    value={form.username}
+                    onChange={(event) =>
+                      updateForm('username', event.target.value)
+                    }
+                    className="h-10 w-full rounded-sm border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:border-muted-foreground"
+                    placeholder="username"
+                  />
+                  {errors.username && (
+                    <span className="text-xs text-red-500">{errors.username}</span>
+                  )}
+                </label>
               </div>
-              {errors.role && (
-                <span className="text-xs text-red-500">{errors.role}</span>
-              )}
-            </label>
+
+              <label className="flex flex-col gap-2 sm:w-1/2 sm:pr-2">
+                <span className="text-sm font-medium text-muted-foreground">
+                  Email
+                </span>
+                <input
+                  type="email"
+                  value={form.email}
+                  onChange={(event) => updateForm('email', event.target.value)}
+                  className="h-10 w-full rounded-sm border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:border-muted-foreground"
+                  placeholder="member@example.com"
+                />
+                {errors.email && (
+                  <span className="text-xs text-red-500">{errors.email}</span>
+                )}
+              </label>
+            </FormSection>
+
+            <div className="border-t border-border" />
+
+            <FormSection
+              title="Access"
+              description="Sign-in password and permission level."
+            >
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="flex flex-col gap-2">
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Password
+                  </span>
+                  <input
+                    type="password"
+                    value={form.password}
+                    onChange={(event) =>
+                      updateForm('password', event.target.value)
+                    }
+                    className="h-10 w-full rounded-sm border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:border-muted-foreground"
+                    placeholder={
+                      isEditing
+                        ? 'Leave blank to keep current password'
+                        : 'At least 8 characters, including .'
+                    }
+                  />
+                  {errors.password && (
+                    <span className="text-xs text-red-500">{errors.password}</span>
+                  )}
+                </label>
+
+                <label className="flex flex-col gap-2">
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Role
+                  </span>
+                  <div className="relative w-full">
+                    <select
+                      value={form.role}
+                      onChange={(event) => updateForm('role', event.target.value)}
+                      className="h-10 w-full appearance-none rounded-sm border border-input bg-background px-3 pr-10 text-sm focus-visible:outline-none focus-visible:border-muted-foreground"
+                    >
+                      {roleOptions.map((role) => (
+                        <option key={role.value} value={role.value}>
+                          {role.label}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown
+                      className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                      aria-hidden="true"
+                    />
+                  </div>
+                  {errors.role && (
+                    <span className="text-xs text-red-500">{errors.role}</span>
+                  )}
+                </label>
+              </div>
+            </FormSection>
           </div>
 
           {isEditing && (
-            <button
-              type="button"
-              onClick={() => setDeleteTarget(editingMember)}
-              disabled={editingMember.id === state.user?.id}
-              className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-foreground hover:text-red-600 disabled:cursor-not-allowed disabled:text-muted-foreground"
-            >
-              <Trash2 className="h-4 w-4" />
-              Delete member
-            </button>
+            <div>
+              <button
+                type="button"
+                onClick={() => setDeleteTarget(editingMember)}
+                disabled={editingMember.id === state.user?.id}
+                title={
+                  editingMember.id === state.user?.id
+                    ? "You can't delete your own account"
+                    : undefined
+                }
+                className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-foreground hover:text-red-600 disabled:cursor-not-allowed disabled:text-muted-foreground"
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete member
+              </button>
+              {editingMember.id === state.user?.id && (
+                <p className="mt-1.5 text-xs text-muted-foreground">
+                  You can&apos;t delete your own account while logged in as it.
+                </p>
+              )}
+            </div>
           )}
         </section>
 
@@ -404,7 +443,7 @@ function AdminMemberManagementPage() {
         <button
           type="button"
           onClick={openCreate}
-          className="inline-flex items-center gap-2 rounded-full bg-foreground px-8 py-2 text-sm font-medium text-white hover:bg-muted-foreground"
+          className={buttonClassName('primary')}
         >
           <Plus className="h-4 w-4" aria-hidden="true" />
           Create member
@@ -526,6 +565,11 @@ function AdminMemberManagementPage() {
                           type="button"
                           onClick={() => setDeleteTarget(member)}
                           disabled={isCurrentUser}
+                          title={
+                            isCurrentUser
+                              ? "You can't delete your own account"
+                              : undefined
+                          }
                           className="text-muted-foreground hover:text-red-600 disabled:cursor-not-allowed disabled:text-muted-foreground/50"
                           aria-label={`Delete ${member.name}`}
                         >
@@ -542,7 +586,7 @@ function AdminMemberManagementPage() {
       </div>
 
       {loading && (
-        <p className="py-10 text-center text-muted-foreground">Loading members...</p>
+        <LoadingSpinner />
       )}
 
       {!loading && filteredMembers.length === 0 && (
@@ -592,7 +636,7 @@ function DeleteMemberDialog({ member, onCancel, onDelete, submitting }) {
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-full border border-foreground px-6 py-2 text-sm font-medium hover:border-muted-foreground hover:text-muted-foreground"
+            className={buttonClassName('secondary')}
           >
             Cancel
           </button>
@@ -600,7 +644,7 @@ function DeleteMemberDialog({ member, onCancel, onDelete, submitting }) {
             type="button"
             onClick={onDelete}
             disabled={submitting}
-            className="rounded-full bg-foreground px-6 py-2 text-sm font-medium text-white hover:bg-muted-foreground disabled:cursor-not-allowed disabled:opacity-60"
+            className={buttonClassName('primary')}
           >
             {submitting ? 'Deleting...' : 'Delete'}
           </button>

@@ -1,23 +1,27 @@
 import { useEffect, useMemo, useState } from 'react'
 import { ChevronDown, Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
-import AdminLayout from '../components/AdminLayout'
-import ArticleForm from '../components/ArticleForm'
-import ConfirmDialog from '../components/ConfirmDialog'
+import AdminLayout from '../../components/AdminLayout'
+import LoadingSpinner from '../../components/LoadingSpinner'
+import ArticleForm from '../../components/ArticleForm'
+import ConfirmDialog from '../../components/ConfirmDialog'
 import {
   createAdminArticle,
   deleteAdminArticle,
   getAdminArticles,
   updateAdminArticle,
   uploadArticleImage,
-} from '../services/articleAdminService'
-import { getAdminCategories } from '../services/categoryAdminService'
-import { getStatusMeta } from '../utils/postStatus'
+} from '../../services/articleAdminService'
+import { getAdminCategories } from '../../services/categoryAdminService'
+import { getStatusMeta } from '../../utils/postStatus'
 import {
   emptyArticleForm,
   getArticleForm,
   validateArticleForm,
-} from '../utils/articleForm'
+} from '../../utils/articleForm'
+import { useAuth } from '../../context/useAuth'
+import { buttonClassName } from '../../utils/buttonStyles'
+import { bioParagraphsToText, bioTextToParagraphs } from '../../utils/bio'
 
 const emptyForm = { ...emptyArticleForm, category: 'Pop' }
 
@@ -26,13 +30,16 @@ function getErrorMessage(error, fallback) {
 }
 
 function AdminArticleManagementPage() {
+  const { state, updateProfile } = useAuth()
   const [categories, setCategories] = useState([])
   const [articles, setArticles] = useState([])
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [uploadingDetailImage, setUploadingDetailImage] = useState(false)
   const [view, setView] = useState('list')
   const [form, setForm] = useState(emptyForm)
+  const [authorBio, setAuthorBio] = useState(() => bioParagraphsToText(state.user?.bio))
   const [status, setStatus] = useState('pending')
   const [editingId, setEditingId] = useState(null)
   const [errors, setErrors] = useState({})
@@ -105,6 +112,7 @@ function AdminArticleManagementPage() {
     // Not shown as an editable control on create — every new post starts
     // pending no matter what's sent, so this is purely for the request body.
     setStatus('pending')
+    setAuthorBio(bioParagraphsToText(state.user?.bio))
     setErrors({})
     setView('form')
   }
@@ -113,6 +121,7 @@ function AdminArticleManagementPage() {
     setEditingId(article.id)
     setForm(getArticleForm(article))
     setStatus(article.status)
+    setAuthorBio(bioParagraphsToText(state.user?.bio))
     setErrors({})
     setView('form')
   }
@@ -133,6 +142,23 @@ function AdminArticleManagementPage() {
 
     setSubmitting(true)
     try {
+      const nextBio = bioTextToParagraphs(authorBio)
+      const currentBio = state.user?.bio || []
+      if (JSON.stringify(nextBio) !== JSON.stringify(currentBio)) {
+        const result = await updateProfile({
+          name: state.user.name,
+          username: state.user.username,
+          email: state.user.email,
+          profilePic: state.user.profilePic,
+          bio: nextBio,
+        })
+        if (result?.error) {
+          setApiError(result.error)
+          setSubmitting(false)
+          return
+        }
+      }
+
       if (editingArticle) {
         await updateAdminArticle(editingArticle, form, status)
         showToast('Article updated', 'Your article has been successfully saved')
@@ -188,6 +214,21 @@ function AdminArticleManagementPage() {
     }
   }
 
+  const handleDetailImageUpload = async (event) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    setUploadingDetailImage(true)
+    try {
+      const url = await uploadArticleImage(file)
+      updateForm('detailImage', url)
+    } catch (error) {
+      setApiError(getErrorMessage(error, 'Unable to upload image.'))
+    } finally {
+      setUploadingDetailImage(false)
+    }
+  }
+
   if (view === 'form') {
     const isEditing = Boolean(editingArticle)
 
@@ -199,13 +240,13 @@ function AdminArticleManagementPage() {
             type="button"
             onClick={submitArticle}
             disabled={submitting || uploading}
-            className="rounded-full bg-foreground px-8 py-2 text-sm font-medium text-white hover:bg-muted-foreground disabled:cursor-not-allowed disabled:opacity-60"
+            className={buttonClassName('primary')}
           >
             {submitting ? 'Saving...' : isEditing ? 'Save' : 'Submit'}
           </button>
         }
       >
-        <form className="max-w-[760px]" onSubmit={(e) => e.preventDefault()}>
+        <form className="mx-auto w-full max-w-[1100px]" onSubmit={(e) => e.preventDefault()}>
           {apiError && (
             <div className="mb-5 rounded-sm bg-red-500 px-5 py-3 text-sm font-medium text-white">
               {apiError}
@@ -216,10 +257,26 @@ function AdminArticleManagementPage() {
             form={form}
             errors={errors}
             categories={categories}
-            authorName="Techin B."
+            authorName={state.user?.name || ''}
+            authorBio={authorBio}
+            authorAvatar={state.user?.profilePic}
             uploading={uploading}
+            uploadingDetailImage={uploadingDetailImage}
             onChange={updateForm}
             onImageUpload={handleImageUpload}
+            onDetailImageUpload={handleDetailImageUpload}
+            onAuthorBioChange={setAuthorBio}
+            // An admin edits other members' posts here, so the preview has to
+            // show the post's real byline rather than the admin's. On create
+            // there's no post yet and the admin is the author, so it falls
+            // through to the form's own author fields.
+            previewAuthor={
+              editingArticle && {
+                name: editingArticle.author,
+                bio: bioParagraphsToText(editingArticle.authorBio),
+                avatar: editingArticle.authorAvatar,
+              }
+            }
             footer={
               isEditing && (
                 <label className="flex flex-col gap-2">
@@ -290,7 +347,7 @@ function AdminArticleManagementPage() {
         <button
           type="button"
           onClick={openCreate}
-          className="inline-flex items-center gap-2 rounded-full bg-foreground px-8 py-2 text-sm font-medium text-white hover:bg-muted-foreground"
+          className={buttonClassName('primary')}
         >
           <Plus className="h-4 w-4" aria-hidden="true" />
           Create article
@@ -401,7 +458,7 @@ function AdminArticleManagementPage() {
       </div>
 
       {loading && (
-        <p className="py-10 text-center text-muted-foreground">Loading articles...</p>
+        <LoadingSpinner />
       )}
 
       {!loading && filteredArticles.length === 0 && (

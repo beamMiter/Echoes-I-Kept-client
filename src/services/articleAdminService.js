@@ -17,6 +17,13 @@ export async function createAdminArticle(form, status) {
     const { data } = await apiClient.post('/api/posts', {
       category: form.category,
       image: form.image,
+      detailImage: form.detailImage || null,
+      // Omitted when empty so the server default applies; sending it back
+      // preserves the stored crop, which is otherwise reset to "center" on
+      // every save because updatePostSchema defaults it.
+      ...(form.detailImagePosition
+        ? { detailImagePosition: form.detailImagePosition }
+        : {}),
       title: form.title,
       description: form.description,
       content: form.content,
@@ -36,6 +43,13 @@ export async function updateAdminArticle(article, form, status) {
     const { data } = await apiClient.put(`/api/posts/${article.id}`, {
       category: form.category,
       image: form.image,
+      detailImage: form.detailImage || null,
+      // Omitted when empty so the server default applies; sending it back
+      // preserves the stored crop, which is otherwise reset to "center" on
+      // every save because updatePostSchema defaults it.
+      ...(form.detailImagePosition
+        ? { detailImagePosition: form.detailImagePosition }
+        : {}),
       title: form.title,
       description: form.description,
       content: form.content,

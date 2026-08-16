@@ -3,6 +3,8 @@ import { User } from 'lucide-react'
 import { toast } from 'sonner'
 import AccountLayout from '../components/AccountLayout'
 import { useAuth } from '../context/useAuth'
+import { bioParagraphsToText, bioTextToParagraphs } from '../utils/bio'
+import { buttonClassName } from '../utils/buttonStyles'
 
 function getProfileForm(user) {
   return {
@@ -10,10 +12,15 @@ function getProfileForm(user) {
     username: user?.username || '',
     email: user?.email || '',
     profilePic: user?.profilePic || '',
+    bio: bioParagraphsToText(user?.bio),
   }
 }
 
-function ProfilePage() {
+// Keyed by user id in ProfilePage below so the form fully remounts (and
+// re-derives from getProfileForm) whenever the logged-in account changes —
+// otherwise the useState initializer only runs once, and the form would keep
+// showing whoever's data it first mounted with, bio included.
+function ProfileForm() {
   const { state, updateProfile } = useAuth()
   const [form, setForm] = useState(() => getProfileForm(state.user))
   const [errors, setErrors] = useState({})
@@ -63,6 +70,7 @@ function ProfilePage() {
       username: form.username.trim(),
       email: form.email.trim(),
       profilePic: form.profilePic.trim(),
+      bio: bioTextToParagraphs(form.bio),
     })
 
     if (result?.error) {
@@ -100,7 +108,7 @@ function ProfilePage() {
               <User className="h-10 w-10 md:h-12 md:w-12" strokeWidth={1.5} />
             </div>
           )}
-          <label className="inline-flex h-10 cursor-pointer items-center justify-center rounded-full border border-foreground px-5 text-center text-xs font-medium hover:border-muted-foreground hover:text-muted-foreground">
+          <label className={buttonClassName('secondary', 'cursor-pointer')}>
             Upload profile picture
             <input
               type="file"
@@ -164,13 +172,31 @@ function ProfilePage() {
               <span className="text-xs text-red-500">{errors.email}</span>
             )}
           </label>
+
+          <label className="block space-y-1 md:space-y-2">
+            <span className="text-xs font-medium text-muted-foreground">
+              Bio
+            </span>
+            <textarea
+              value={form.bio}
+              onChange={(e) => updateField('bio', e.target.value)}
+              disabled={state.loading}
+              placeholder="Tell readers what you write about. Leave a blank line between paragraphs."
+              className="min-h-28 w-full rounded-sm border border-input bg-background px-3 py-3 text-sm focus-visible:border-muted-foreground focus-visible:outline-none"
+            />
+            <span className="block text-xs text-muted-foreground">
+              Shown on your articles' author card. New posts snapshot this
+              when they're created — editing your bio later won't change
+              posts you already wrote.
+            </span>
+          </label>
         </div>
 
         <div className="mt-8 md:mt-10">
           <button
             type="submit"
             disabled={state.loading}
-            className="inline-flex h-10 min-w-[120px] items-center justify-center rounded-full bg-foreground px-6 text-xs font-medium text-white hover:bg-muted-foreground disabled:opacity-60 md:h-12"
+            className={buttonClassName('primary', 'min-w-[120px]')}
           >
             Save
           </button>
@@ -178,6 +204,11 @@ function ProfilePage() {
       </form>
     </AccountLayout>
   )
+}
+
+function ProfilePage() {
+  const { state } = useAuth()
+  return <ProfileForm key={state.user?.id ?? 'anonymous'} />
 }
 
 export default ProfilePage

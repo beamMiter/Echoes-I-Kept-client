@@ -2,7 +2,7 @@ import { Copy, Heart } from 'lucide-react'
 import { toast } from 'sonner'
 import BrandIcon from './ui/BrandIcon'
 
-function ArticleLikeShare({ likesAmount, onLike }) {
+function ArticleLikeShare({ likesAmount, liked = false, onLike }) {
   const shareUrl = encodeURI(window.location.href)
 
   const handleCopy = async () => {
@@ -24,9 +24,17 @@ function ArticleLikeShare({ likesAmount, onLike }) {
         <button
           type="button"
           onClick={onLike}
-          className="group flex items-center justify-center gap-2 rounded-full border border-foreground bg-white px-11 py-3 text-[#4A4945] transition-colors hover:border-muted-foreground hover:text-muted-foreground"
+          aria-pressed={liked}
+          className={`group flex items-center justify-center gap-2 rounded-md border px-11 py-3 transition-colors ${
+            liked
+              ? 'border-red-500 bg-red-50 text-red-600'
+              : 'border-foreground bg-white text-[#4A4945] hover:border-muted-foreground hover:text-muted-foreground'
+          }`}
         >
-          <Heart className="h-5 w-5 transition-colors" />
+          <Heart
+            className="h-5 w-5 transition-colors"
+            fill={liked ? 'currentColor' : 'none'}
+          />
           <span className="font-medium transition-colors">{likesAmount}</span>
         </button>
 
@@ -34,7 +42,7 @@ function ArticleLikeShare({ likesAmount, onLike }) {
           <button
             type="button"
             onClick={handleCopy}
-            className="group flex flex-1 items-center justify-center gap-2 rounded-full border border-foreground bg-white px-11 py-3 text-[#4A4945] transition-colors hover:border-muted-foreground hover:text-muted-foreground"
+            className="group flex flex-1 items-center justify-center gap-2 rounded-md border border-foreground bg-white px-11 py-3 text-[#4A4945] transition-colors hover:border-muted-foreground hover:text-muted-foreground"
           >
             <Copy className="h-5 w-5 transition-colors" />
             <span className="font-medium transition-colors">Copy</span>

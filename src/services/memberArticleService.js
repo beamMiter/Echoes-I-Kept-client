@@ -37,6 +37,13 @@ export async function submitArticle(form, status = 'pending') {
     const { data } = await apiClient.post('/api/posts', {
       category: form.category,
       image: form.image,
+      detailImage: form.detailImage || null,
+      // Omitted when empty so the server default applies; sending it back
+      // preserves the stored crop, which is otherwise reset to "center" on
+      // every save because updatePostSchema defaults it.
+      ...(form.detailImagePosition
+        ? { detailImagePosition: form.detailImagePosition }
+        : {}),
       title: form.title,
       description: form.description,
       content: form.content,
@@ -56,6 +63,13 @@ export async function updateMyArticle(id, form, status) {
     const { data } = await apiClient.put(`/api/posts/${id}`, {
       category: form.category,
       image: form.image,
+      detailImage: form.detailImage || null,
+      // Omitted when empty so the server default applies; sending it back
+      // preserves the stored crop, which is otherwise reset to "center" on
+      // every save because updatePostSchema defaults it.
+      ...(form.detailImagePosition
+        ? { detailImagePosition: form.detailImagePosition }
+        : {}),
       title: form.title,
       description: form.description,
       content: form.content,

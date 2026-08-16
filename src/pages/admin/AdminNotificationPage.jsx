@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import AdminLayout from '../components/AdminLayout'
-import { useAuth } from '../context/useAuth'
+import AdminLayout from '../../components/AdminLayout'
+import LoadingSpinner from '../../components/LoadingSpinner'
+import { useAuth } from '../../context/useAuth'
 import {
   getNotifications,
   markNotificationAsRead,
-} from '../services/notificationService'
+} from '../../services/notificationService'
 
 function formatRelativeTime(value) {
   const diffMs = Date.now() - new Date(value).getTime()
@@ -74,7 +75,7 @@ function AdminNotificationPage() {
     <AdminLayout title="Notification">
       <div className="w-full">
         {loading ? (
-          <p className="py-10 text-muted-foreground">Loading notifications...</p>
+          <LoadingSpinner />
         ) : unreadNotifications.length > 0 ? (
           <div className="divide-y divide-border">
             {unreadNotifications.map((notification) => (

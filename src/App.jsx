@@ -1,24 +1,43 @@
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "sonner";
 import { AuthProvider } from "./context/AuthContext";
 import ScrollToTop from "./components/ScrollToTop";
+import LoadingSpinner from "./components/LoadingSpinner";
 import AdminRoute from "./components/AdminRoute";
 import GuestRoute from "./components/GuestRoute";
 import ProtectedRoute from "./components/ProtectedRoute";
 import HomePage from "./pages/HomePage";
-import AdminLoginPage from "./pages/admin/AdminLoginPage";
-import AuthPage from "./pages/AuthPage";
-import PostDetailPage from "./pages/PostDetailPage";
-import AdminArticleManagementPage from "./pages/AdminArticleManagementPage";
-import AdminCategoryManagementPage from "./pages/AdminCategoryManagementPage";
-import AdminMemberManagementPage from "./pages/AdminMemberManagementPage";
-import AdminNotificationPage from "./pages/AdminNotificationPage";
-import AdminContentModerationPage from "./pages/AdminContentModerationPage";
-import MyArticlesPage from "./pages/MyArticlesPage";
-import MyArticleFormPage from "./pages/MyArticleFormPage";
-import ProfilePage from "./pages/ProfilePage";
-import ResetPasswordPage from "./pages/ResetPasswordPage";
-import NotFoundPage from "./pages/NotFoundPage";
+
+// Only the homepage is bundled eagerly — it's the common entry point, and it's
+// what the GSAP-driven hero lives on. Everything else is split out so a visitor
+// isn't downloading the admin panel and the markdown renderer just to read the
+// front page.
+const AdminLoginPage = lazy(() => import("./pages/admin/AdminLoginPage"));
+const AuthPage = lazy(() => import("./pages/AuthPage"));
+const PostDetailPage = lazy(() => import("./pages/PostDetailPage"));
+const AdminArticleManagementPage = lazy(
+  () => import("./pages/admin/AdminArticleManagementPage"),
+);
+const AdminCategoryManagementPage = lazy(
+  () => import("./pages/admin/AdminCategoryManagementPage"),
+);
+const AdminMemberManagementPage = lazy(
+  () => import("./pages/admin/AdminMemberManagementPage"),
+);
+const AdminNotificationPage = lazy(
+  () => import("./pages/admin/AdminNotificationPage"),
+);
+const AdminContentModerationPage = lazy(
+  () => import("./pages/admin/AdminContentModerationPage"),
+);
+const MyArticlesPage = lazy(() => import("./pages/MyArticlesPage"));
+const MyArticleFormPage = lazy(() => import("./pages/MyArticleFormPage"));
+const ProfilePage = lazy(() => import("./pages/ProfilePage"));
+const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage"));
+const NewPasswordPage = lazy(() => import("./pages/NewPasswordPage"));
+const VerifyCodePage = lazy(() => import("./pages/VerifyCodePage"));
+const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 
 function App() {
   return (
@@ -38,7 +57,8 @@ function App() {
             },
           }}
         />
-        <Routes>
+        <Suspense fallback={<LoadingSpinner />}>
+          <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/post/:postId" element={<PostDetailPage />} />
           <Route
@@ -165,8 +185,25 @@ function App() {
               </GuestRoute>
             }
           />
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
+          <Route
+            path="/verify-code"
+            element={
+              <GuestRoute>
+                <VerifyCodePage />
+              </GuestRoute>
+            }
+          />
+          <Route
+            path="/reset-password/:token"
+            element={
+              <GuestRoute>
+                <NewPasswordPage />
+              </GuestRoute>
+            }
+          />
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </Suspense>
       </AuthProvider>
     </BrowserRouter>
   );

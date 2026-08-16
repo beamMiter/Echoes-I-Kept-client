@@ -1,24 +1,20 @@
-import { useEffect, useMemo, useState } from "react";
-import ReactMarkdown from "react-markdown";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { FileQuestion } from "lucide-react";
+import { toast } from "sonner";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import LoadingSpinner from "../components/LoadingSpinner";
-import AuthorSidebar from "../components/AuthorSidebar";
+import ArticleContent from "../components/ArticleContent";
 import ArticleLikeShare from "../components/ArticleLikeShare";
 import ArticleComments from "../components/ArticleComments";
+import ArticleTranslate from "../components/ArticleTranslate";
 import AuthRequiredDialog from "../components/ui/AuthRequiredDialog";
-import {
-  getMockPostById,
-  getMockLikesAmount,
-  getMockCommentsByPostId,
-  getPostHeroImage,
-  getPostHeroImagePosition,
-} from "../data/mockPosts";
 import { fetchPublishedPostById } from "../services/postsService";
+import { fetchComments, createComment } from "../services/commentsService";
+import { likePost, unlikePost } from "../services/likesService";
+import { translatePost } from "../services/aiService";
 import { useAuth } from "../context/useAuth";
-import { getCategoryTextStyles } from "../utils/categoryStyles";
 
 const pageShellClassName = "no-image-drag flex flex-col min-h-screen";
 
@@ -26,50 +22,41 @@ function preventImageDrag(e) {
   if (e.target instanceof HTMLImageElement) e.preventDefault();
 }
 
-function toMarkdownContent(content) {
-  if (!content) return null;
-
-  return content.replace(/(^|\n)(\d+\.\s[^\n]+)/g, "$1## $2");
-}
-
 function PostDetailPage() {
   const { postId } = useParams();
-  const detailImageSource = useMemo(() => getMockPostById(postId), [postId]);
 
   return (
     <div className={pageShellClassName} onDragStart={preventImageDrag}>
       <Navbar />
-      <PostDetailBody
-        key={postId}
-        postId={postId}
-        detailImageSource={detailImageSource}
-      />
+      <PostDetailBody key={postId} postId={postId} />
       <Footer />
     </div>
   );
 }
 
-function PostDetailBody({ postId, detailImageSource }) {
+function PostDetailBody({ postId }) {
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
 
-    const resolvePost = () => {
-      return fetchPublishedPostById(postId).catch(() => detailImageSource);
-    };
-
-    resolvePost().then((result) => {
-      if (cancelled) return;
-      setPost(result);
-      setLoading(false);
-    });
+    fetchPublishedPostById(postId)
+      .then((result) => {
+        if (cancelled) return;
+        setPost(result);
+      })
+      .catch(() => {
+        if (!cancelled) setPost(null);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
 
     return () => {
       cancelled = true;
     };
-  }, [postId, detailImageSource]);
+  }, [postId]);
 
   if (loading) {
     return (
@@ -98,27 +85,69 @@ function PostDetailBody({ postId, detailImageSource }) {
     );
   }
 
-  return (
-    <PostDetailContent
-      post={post}
-      postId={postId}
-      detailImageSource={detailImageSource}
-    />
-  );
+  return <PostDetailContent post={post} postId={postId} />;
 }
 
-function PostDetailContent({ post, postId, detailImageSource }) {
-  const { state, isAuthenticated } = useAuth();
+function PostDetailContent({ post, postId }) {
+  const { isAuthenticated } = useAuth();
   const content = post.content || "";
-  const currentUser = state.user;
-  const [likesAmount, setLikesAmount] = useState(() =>
-    getMockLikesAmount(postId),
-  );
-  const [comments, setComments] = useState(() =>
-    getMockCommentsByPostId(postId),
-  );
-  const [loadedHeroImage, setLoadedHeroImage] = useState(null);
+  const [likesAmount, setLikesAmount] = useState(post.likesCount || 0);
+  const [liked, setLiked] = useState(Boolean(post.likedByMe));
+  const [comments, setComments] = useState([]);
   const [loginDialogOpen, setLoginDialogOpen] = useState(false);
+
+  const [language, setLanguage] = useState("original");
+  const [loadingLanguage, setLoadingLanguage] = useState(null);
+  // Keyed by language code so switching back to one already fetched this
+  // session (including "original") is instant and doesn't re-spend a quota
+  // slot on a call the server would've served from its own cache anyway.
+  const [translations, setTranslations] = useState({
+    original: { title: post.title, description: post.description, content },
+  });
+
+  const handleSelectLanguage = async (code) => {
+    if (code === language || loadingLanguage) return;
+
+    if (translations[code]) {
+      setLanguage(code);
+      return;
+    }
+
+    // No login gate up front — anonymous readers can read a language other
+    // readers already generated for free. The server only asks for a login
+    // (LOGIN_REQUIRED) when this specific post/language isn't cached yet,
+    // since generating a fresh translation is the part that costs money.
+    setLoadingLanguage(code);
+    try {
+      const result = await translatePost(postId, code);
+      setTranslations((prev) => ({ ...prev, [code]: result }));
+      setLanguage(code);
+    } catch (error) {
+      if (error.code === "LOGIN_REQUIRED") {
+        setLoginDialogOpen(true);
+      } else {
+        toast.error("Unable to translate this article", {
+          description: error.error,
+        });
+      }
+    } finally {
+      setLoadingLanguage(null);
+    }
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetchComments(postId)
+      .then((result) => {
+        if (!cancelled) setComments(result);
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [postId]);
 
   const requireLogin = () => {
     if (isAuthenticated) return true;
@@ -127,117 +156,87 @@ function PostDetailContent({ post, postId, detailImageSource }) {
     return false;
   };
 
-  const handleLike = () => {
+  const handleLike = async () => {
     if (!requireLogin()) return;
 
-    setLikesAmount((prev) => prev + 1);
+    const nextLiked = !liked;
+    setLiked(nextLiked);
+    setLikesAmount((prev) => prev + (nextLiked ? 1 : -1));
+
+    try {
+      const result = nextLiked
+        ? await likePost(postId)
+        : await unlikePost(postId);
+      setLikesAmount(result.likesCount);
+      setLiked(result.liked);
+    } catch {
+      // Roll back the optimistic update — most likely cause is the like
+      // state on the server already matched what we were toggling away
+      // from (e.g. a second tab), so re-syncing beats leaving a wrong count.
+      setLiked(!nextLiked);
+      setLikesAmount((prev) => prev + (nextLiked ? -1 : 1));
+    }
   };
 
-  const handleAddComment = (text) => {
+  const handleAddComment = async (text) => {
     if (!requireLogin()) return false;
 
-    const newComment = {
-      id: Date.now(),
-      name: currentUser?.name || "You",
-      profile_pic: currentUser?.profilePic || "/author-image.jpeg",
-      comment_text: text,
-      created_at: new Date().toISOString(),
-    };
-    setComments((prev) => [newComment, ...prev]);
+    const comment = await createComment(postId, text);
+    setComments((prev) => [comment, ...prev]);
+    toast.success("Comment posted");
     return true;
   };
 
   const dateString = post.date;
-  const heroImage = getPostHeroImage(post, detailImageSource);
-  const heroImagePosition = getPostHeroImagePosition(post, detailImageSource);
-  const heroImageLoaded = loadedHeroImage === heroImage;
-  const author = {
-    name: post.author,
-    profilePic: post.authorAvatar,
-    bio: post.authorBio,
-  };
+  const heroImage = post.detailImage || post.image || "";
+  const heroImagePosition = post.detailImagePosition || "center";
+  const dateLabel = dateString
+    ? new Date(dateString).toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      })
+    : "";
+
+  const displayed = translations[language];
 
   return (
     <main className="flex-grow">
-        <div className="max-w-7xl mx-auto space-y-8 container md:px-8 pb-20 md:pb-28 md:pt-8 lg:pt-16">
-          <div className="space-y-4 md:px-4">
-            {heroImage && (
-              <div className="relative h-[260px] w-full overflow-hidden md:rounded-lg sm:h-[340px] md:h-[587px]">
-                {!heroImageLoaded && (
-                  <div
-                    className="skeleton-shimmer absolute inset-0 z-10"
-                    aria-hidden="true"
-                  />
-                )}
-                <img
-                  src={heroImage}
-                  alt={post.title}
-                  draggable={false}
-                  className={`h-full w-full object-cover transition-opacity duration-300 ${
-                    heroImageLoaded ? "opacity-100" : "opacity-0"
-                  }`}
-                  style={{ objectPosition: heroImagePosition }}
-                  onLoad={() => setLoadedHeroImage(heroImage)}
-                  onError={() => setLoadedHeroImage(heroImage)}
-                />
-              </div>
-            )}
-          </div>
+      <ArticleContent
+        category={post?.category}
+        dateLabel={dateLabel}
+        title={displayed.title}
+        description={displayed.description}
+        content={displayed.content}
+        heroImage={heroImage}
+        heroImagePosition={heroImagePosition}
+        authorName={post.author}
+        authorBio={post.authorBio}
+        authorAvatar={post.authorAvatar}
+        headerActions={
+          <ArticleTranslate
+            active={language}
+            loadingLanguage={loadingLanguage}
+            onSelect={handleSelectLanguage}
+          />
+        }
+      >
+        <ArticleLikeShare
+          likesAmount={likesAmount}
+          liked={liked}
+          onLike={handleLike}
+        />
 
-          <div className="flex flex-col xl:flex-row gap-6">
-            <div className="xl:w-3/4 space-y-8">
-              <article className="px-4">
-                <div className="mb-2 flex items-center gap-3">
-                  <span
-                    className={`shrink-0 text-sm font-semibold ${getCategoryTextStyles(post?.category)}`}
-                  >
-                    {post?.category}
-                  </span>
-                  {dateString && (
-                    <span className="shrink-0 text-sm text-muted-foreground">
-                      {new Date(dateString).toLocaleDateString("en-GB", {
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric",
-                      })}
-                    </span>
-                  )}
-                </div>
+        <ArticleComments
+          comments={comments}
+          onAddComment={handleAddComment}
+        />
+      </ArticleContent>
 
-                <h1 className="font-display text-3xl font-medium">{post?.title}</h1>
-                <p className="mt-4 mb-10 text-muted-foreground">
-                  {post?.description}
-                </p>
-
-                <div className="markdown font-sans text-[15px] leading-[1.55]">
-                  <ReactMarkdown>{toMarkdownContent(content)}</ReactMarkdown>
-                </div>
-              </article>
-
-              <div className="xl:hidden px-4">
-                <AuthorSidebar {...author} />
-              </div>
-
-              <ArticleLikeShare likesAmount={likesAmount} onLike={handleLike} />
-
-              <ArticleComments
-                comments={comments}
-                onAddComment={handleAddComment}
-              />
-            </div>
-
-            <div className="hidden xl:block xl:w-1/4">
-              <div className="sticky top-32">
-                <AuthorSidebar {...author} />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {loginDialogOpen && (
-          <AuthRequiredDialog onClose={() => setLoginDialogOpen(false)} />
-        )}
-      </main>
+      {loginDialogOpen && (
+        <AuthRequiredDialog onClose={() => setLoginDialogOpen(false)} />
+      )}
+    </main>
   );
 }
 

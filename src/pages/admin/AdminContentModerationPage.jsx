@@ -1,15 +1,25 @@
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import AdminLayout from '../components/AdminLayout'
-import ConfirmDialog from '../components/ConfirmDialog'
+import { Sparkles } from 'lucide-react'
+import AdminLayout from '../../components/AdminLayout'
+import LoadingSpinner from '../../components/LoadingSpinner'
+import ConfirmDialog from '../../components/ConfirmDialog'
 import {
   approveArticle,
   getPendingArticles,
   rejectArticle,
-} from '../services/articleAdminService'
+} from '../../services/articleAdminService'
+import { analyzePost } from '../../services/aiService'
+import { AI_ICON_HOVER_CLASS, buttonClassName } from '../../utils/buttonStyles'
 
 function getErrorMessage(error, fallback) {
   return error.response?.data?.error || error.error || fallback
+}
+
+const RECOMMENDATION_STYLES = {
+  approve: { label: 'Nothing flagged', className: 'bg-green-100 text-green-900' },
+  review: { label: 'Worth a closer look', className: 'bg-amber-100 text-amber-900' },
+  reject: { label: 'Likely reject', className: 'bg-red-100 text-red-900' },
 }
 
 function AdminContentModerationPage() {
@@ -20,6 +30,14 @@ function AdminContentModerationPage() {
   const [rejectTarget, setRejectTarget] = useState(null)
   const [rejectReason, setRejectReason] = useState('')
   const [expandedId, setExpandedId] = useState(null)
+  // Advisory analysis, keyed by article id. Nothing here decides anything —
+  // approve/reject remain manual clicks against the admin-only post routes.
+  const [analyses, setAnalyses] = useState({})
+  // A set rather than a single id: analyses run concurrently, and holding one
+  // id meant starting a second overwrote the first, flipping its button back
+  // to enabled while its request was still open and inviting a duplicate call
+  // against a metered endpoint.
+  const [analyzingIds, setAnalyzingIds] = useState(() => new Set())
 
   useEffect(() => {
     let cancelled = false
@@ -42,6 +60,23 @@ function AdminContentModerationPage() {
 
   const removeFromQueue = (id) => {
     setArticles((prev) => prev.filter((article) => article.id !== id))
+  }
+
+  const handleAnalyze = async (article) => {
+    setAnalyzingIds((prev) => new Set(prev).add(article.id))
+    setApiError('')
+    try {
+      const result = await analyzePost(article.id)
+      setAnalyses((prev) => ({ ...prev, [article.id]: result }))
+    } catch (error) {
+      setApiError(getErrorMessage(error, 'Unable to analyze this post.'))
+    } finally {
+      setAnalyzingIds((prev) => {
+        const next = new Set(prev)
+        next.delete(article.id)
+        return next
+      })
+    }
   }
 
   const handleApprove = async (article) => {
@@ -95,7 +130,7 @@ function AdminContentModerationPage() {
       </p>
 
       {loading && (
-        <p className="py-10 text-center text-muted-foreground">Loading review queue...</p>
+        <LoadingSpinner />
       )}
 
       {!loading && articles.length === 0 && (
@@ -108,6 +143,15 @@ function AdminContentModerationPage() {
         <ul className="space-y-4">
           {articles.map((article) => {
             const expanded = expandedId === article.id
+            const analysis = analyses[article.id]
+            const analyzing = analyzingIds.has(article.id)
+            // aiService already narrows `recommendation` to a known key, but
+            // falling back here keeps an unrecognized verdict from throwing
+            // mid-render and blanking the queue if the two ever drift apart.
+            const recommendation = analysis
+              ? RECOMMENDATION_STYLES[analysis.recommendation] ??
+                RECOMMENDATION_STYLES.review
+              : null
 
             return (
               <li
@@ -148,6 +192,40 @@ function AdminContentModerationPage() {
                         </div>
                       </div>
                     )}
+
+                    {analysis && (
+                      <div className="mt-4 rounded-sm border border-border bg-[#FAFAF9] px-4 py-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span
+                            className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${recommendation.className}`}
+                          >
+                            {recommendation.label}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            AI suggestion — you still decide
+                          </span>
+                        </div>
+
+                        {analysis.truncated && (
+                          <p className="mt-3 rounded-sm bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                            This post was too long to send in full — the notes
+                            below cover only its opening section.
+                          </p>
+                        )}
+
+                        {analysis.concerns.length > 0 ? (
+                          <ul className="mt-3 list-inside list-disc space-y-1 text-sm text-muted-foreground">
+                            {analysis.concerns.map((concern, index) => (
+                              <li key={index}>{concern}</li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="mt-3 text-sm text-muted-foreground">
+                            No specific concerns raised.
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex shrink-0 flex-col gap-2">
@@ -155,7 +233,7 @@ function AdminContentModerationPage() {
                       type="button"
                       onClick={() => handleApprove(article)}
                       disabled={submitting}
-                      className="rounded-full bg-foreground px-6 py-2 text-sm font-medium text-white hover:bg-muted-foreground disabled:cursor-not-allowed disabled:opacity-60"
+                      className={buttonClassName('primary')}
                     >
                       Approve
                     </button>
@@ -163,12 +241,27 @@ function AdminContentModerationPage() {
                       type="button"
                       onClick={() => {
                         setRejectTarget(article)
-                        setRejectReason('')
+                        // Pre-fills the reason when the assistant drafted one;
+                        // the admin edits it before it reaches the author.
+                        setRejectReason(analysis?.suggestedRejectionReason || '')
                       }}
                       disabled={submitting}
-                      className="rounded-full border border-foreground px-6 py-2 text-sm font-medium hover:border-red-600 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-60"
+                      className={buttonClassName('dangerOutline')}
                     >
                       Reject
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleAnalyze(article)}
+                      disabled={analyzing}
+                      className={buttonClassName('ai')}
+                    >
+                      <Sparkles className={`h-4 w-4 ${AI_ICON_HOVER_CLASS}`} aria-hidden="true" />
+                      {analyzing
+                        ? 'Reading...'
+                        : analysis
+                          ? 'Re-check'
+                          : 'Check with AI'}
                     </button>
                   </div>
                 </div>

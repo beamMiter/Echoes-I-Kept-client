@@ -1,21 +1,17 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import {
-  AtSign,
-  CheckCircle2,
-  Loader2,
-  LockKeyhole,
-  Mail,
-  User,
-} from "lucide-react";
+import { AtSign, Loader2, LockKeyhole, Mail, User } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { getPasswordStrengthError } from "../utils/passwordValidation";
 import { useAuth } from "../context/useAuth";
+import { setPendingVerification } from "../utils/verifyCodeSession";
+import { loadGoogleIdentityScript } from "../utils/googleIdentity";
 
 const emptyForm = {
-  name: "",
+  firstName: "",
+  lastName: "",
   username: "",
   email: "",
   password: "",
@@ -116,9 +112,65 @@ function SubmitButton({ children, loading }) {
   );
 }
 
+// Google Identity Services' renderButton() only draws Google's own button —
+// it can't take our icon/label. A fully custom button driving google.accounts
+// .id.prompt() (One Tap) isn't reliable enough to build a "click → popup"
+// flow around: Google suppresses/cools down the prompt after a user dismisses
+// it once, so a real click can silently do nothing.
+//
+// So the real, invisible Google button is layered on top of our styled one,
+// sized to match exactly — whatever the user clicks always lands on Google's
+// actual button underneath, which opens the standard account-chooser popup
+// reliably. What's visible is still the custom design; what actually handles
+// the click and the OAuth flow is the genuine GIS button.
 function GoogleAuthButton() {
-  // TODO: Connect this button to Google OAuth when server authentication is ready.
-  const handleGoogleAuth = () => {};
+  const hostRef = useRef(null);
+  const { loginWithGoogle } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function handleCredentialResponse({ credential }) {
+      const result = await loginWithGoogle(credential);
+      if (result?.error) {
+        toast.error("Unable to continue with Google", {
+          description: result.error,
+        });
+        return;
+      }
+      toast.success("Welcome", {
+        description: "You are signed in to your listening journal.",
+      });
+      navigate("/");
+    }
+
+    loadGoogleIdentityScript()
+      .then(() => {
+        if (cancelled || !hostRef.current) return;
+        window.google.accounts.id.initialize({
+          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+          callback: handleCredentialResponse,
+        });
+        window.google.accounts.id.renderButton(hostRef.current, {
+          type: "standard",
+          // GIS wants a pixel width, not a percentage — the container is a
+          // fixed-width column (see .auth-form-shell in index.css), so the
+          // measured width at mount time is stable.
+          width: hostRef.current.offsetWidth || 400,
+        });
+      })
+      .catch(() => {
+        // Leave the decorative button visible with nothing behind it rather
+        // than throwing — a network hiccup loading a third-party script
+        // shouldn't break the rest of the auth page.
+      });
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <>
@@ -129,14 +181,19 @@ function GoogleAuthButton() {
         </span>
         <span className="h-px flex-1 bg-black/10" />
       </div>
-      <button
-        type="button"
-        onClick={handleGoogleAuth}
-        className="flex h-12 w-full items-center justify-center gap-3 rounded-[4px] border border-black/20 bg-white text-sm font-semibold text-black transition-colors hover:bg-[#f4f3f0] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
-      >
-        <GoogleIcon />
-        Continue with Google
-      </button>
+      <div className="relative h-12 w-full">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none flex h-12 w-full items-center justify-center gap-3 rounded-[4px] border border-black/20 bg-white text-sm font-semibold text-black"
+        >
+          <GoogleIcon />
+          Continue with Google
+        </div>
+        <div
+          ref={hostRef}
+          className="absolute inset-0 overflow-hidden opacity-0 [&>div]:!w-full"
+        />
+      </div>
     </>
   );
 }
@@ -144,23 +201,19 @@ function GoogleAuthButton() {
 function AuthPage() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { login, signup, state } = useAuth();
+  const { login, signup, forgotPassword, state } = useAuth();
   const mode = modeByPath[location.pathname] || "login";
   const [form, setForm] = useState(emptyForm);
   const [errors, setErrors] = useState({});
   const [apiError, setApiError] = useState("");
-  const [resetRequested, setResetRequested] = useState(false);
-  const [signupComplete, setSignupComplete] = useState(false);
-  const [pendingSignup, setPendingSignup] = useState(null);
+  const [resetLinkSent, setResetLinkSent] = useState(false);
 
   const switchMode = (nextMode) => {
     const nextPath = pathByMode[nextMode] || "/login";
     setForm(emptyForm);
     setErrors({});
     setApiError("");
-    setResetRequested(false);
-    setSignupComplete(false);
-    setPendingSignup(null);
+    setResetLinkSent(false);
     if (location.pathname !== nextPath) navigate(nextPath);
   };
 
@@ -182,7 +235,7 @@ function AuthPage() {
 
   const validateRegister = () => {
     const next = validateLogin();
-    if (!form.name.trim()) next.name = "Name is required.";
+    if (!form.firstName.trim()) next.firstName = "First name is required.";
     if (!form.username.trim()) next.username = "Username is required.";
     else if (!/^[a-zA-Z0-9_]+$/.test(form.username)) {
       next.username = "Use only letters, numbers, and underscores.";
@@ -206,6 +259,14 @@ function AuthPage() {
     if (Object.keys(nextErrors).length) return;
 
     const result = await login({ email: form.email, password: form.password });
+    if (result?.code === "EMAIL_NOT_VERIFIED") {
+      setPendingVerification({
+        email: form.email.trim().toLowerCase(),
+        purpose: "signup_verify",
+      });
+      navigate("/verify-code");
+      return;
+    }
     if (result?.error) {
       setApiError(result.error);
       toast.error("Unable to log in", {
@@ -225,15 +286,13 @@ function AuthPage() {
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) return;
 
-    const result = await signup(
-      {
-        name: form.name,
-        username: form.username,
-        email: form.email,
-        password: form.password,
-      },
-      { autoLogin: false },
-    );
+    const result = await signup({
+      firstName: form.firstName,
+      lastName: form.lastName,
+      username: form.username,
+      email: form.email,
+      password: form.password,
+    });
     if (result?.error) {
       setApiError(result.error);
       toast.error("Unable to create account", {
@@ -241,17 +300,18 @@ function AuthPage() {
       });
       return;
     }
-    setPendingSignup({
+
+    setPendingVerification({
       email: form.email.trim().toLowerCase(),
-      password: form.password,
+      purpose: "signup_verify",
     });
-    setSignupComplete(true);
     toast.success("Account created", {
-      description: "Your listening journal is ready.",
+      description: "Enter the code we sent you to finish setting up.",
     });
+    navigate("/verify-code");
   };
 
-  const handleForgotPassword = (event) => {
+  const handleForgotPassword = async (event) => {
     event.preventDefault();
     const nextErrors = {};
     if (!form.email.trim()) nextErrors.email = "Email is required.";
@@ -259,30 +319,23 @@ function AuthPage() {
       nextErrors.email = "Please enter a valid email address.";
     }
     setErrors(nextErrors);
-    if (!Object.keys(nextErrors).length) {
-      setResetRequested(true);
-      toast.success("Reset link requested", {
-        description: "If an account exists, reset instructions will be sent there.",
-      });
-    }
-  };
+    if (Object.keys(nextErrors).length) return;
 
-  const handleContinueAfterSignup = async () => {
-    if (!pendingSignup) {
-      navigate("/");
-      return;
-    }
-
-    const result = await login(pendingSignup);
+    const email = form.email.trim().toLowerCase();
+    // Always "succeeds" — the server never reveals whether the account
+    // exists, so there's nothing here to branch on beyond a hard failure.
+    const result = await forgotPassword({ email });
     if (result?.error) {
       setApiError(result.error);
-      toast.error("Unable to continue", {
+      toast.error("Unable to request a reset link", {
         description: result.error,
       });
       return;
     }
 
-    navigate("/");
+    // No navigation — the rest of this flow happens by clicking the link in
+    // the email, on this device or another, whenever the user gets to it.
+    setResetLinkSent(true);
   };
 
   const isRegister = mode === "register";
@@ -300,61 +353,69 @@ function AuthPage() {
           >
             {mode === "forgot" ? (
               <div className="auth-form-shell">
-                <div className="text-center">
-                  <h1 className="auth-title mx-auto">Forgot password</h1>
-                  <p className="auth-copy mx-auto">
-                    Enter your email to receive reset instructions
-                  </p>
-                </div>
-
-                {resetRequested ? (
-                  <div className="mt-10 text-center">
-                    <p className="text-xl font-semibold">Check your inbox</p>
-                    <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-black/55">
-                      If an account exists for {form.email}, reset instructions
-                      will be sent there.
+                {resetLinkSent ? (
+                  <div className="text-center">
+                    <h1 className="auth-title mx-auto">Check your inbox</h1>
+                    <p className="auth-copy mx-auto">
+                      If an account exists for{" "}
+                      <span className="font-semibold text-black">
+                        {form.email.trim().toLowerCase()}
+                      </span>
+                      , we've sent a link there to reset your password. It
+                      works once and expires soon, so use it before
+                      requesting another.
                     </p>
                     <button
                       type="button"
                       onClick={() => switchMode("login")}
-                      className="mt-6 text-sm font-semibold underline underline-offset-4 transition-colors hover:text-black/50"
+                      className="mt-7 font-semibold text-black underline underline-offset-4 transition-colors hover:text-black/50"
                     >
-                      Return to log in
+                      Back to log in
                     </button>
                   </div>
                 ) : (
-                  <form
-                    className="mt-8 space-y-7"
-                    onSubmit={handleForgotPassword}
-                  >
-                    <Field
-                      id="forgot-email"
-                      type="email"
-                      autoComplete="email"
-                      label="Email"
-                      placeholder="you@example.com"
-                      icon={Mail}
-                      value={form.email}
-                      error={errors.email}
-                      onChange={(event) =>
-                        handleChange("email", event.target.value)
-                      }
-                    />
-                    <SubmitButton>Send reset link</SubmitButton>
-                  </form>
-                )}
+                  <>
+                    <div className="text-center">
+                      <h1 className="auth-title mx-auto">Forgot password</h1>
+                      <p className="auth-copy mx-auto">
+                        Enter your email to receive a reset link
+                      </p>
+                    </div>
 
-                {!resetRequested && (
-                  <div className="mt-7 flex flex-wrap items-center justify-center gap-2 text-sm text-black/55">
-                    <span>Remember your password?</span>
-                    <button
-                      type="button"
-                      onClick={() => switchMode("login")}
-                      className="font-semibold text-black underline underline-offset-4 transition-colors hover:text-black/50"
+                    <form
+                      className="mt-8 space-y-7"
+                      onSubmit={handleForgotPassword}
                     >
-                      Log in
-                    </button>
-                  </div>
+                      <Field
+                        id="forgot-email"
+                        type="email"
+                        autoComplete="email"
+                        label="Email"
+                        placeholder="you@example.com"
+                        icon={Mail}
+                        value={form.email}
+                        error={errors.email}
+                        disabled={state.loading}
+                        onChange={(event) =>
+                          handleChange("email", event.target.value)
+                        }
+                      />
+                      <SubmitButton loading={state.loading}>
+                        Send reset link
+                      </SubmitButton>
+                    </form>
+
+                    <div className="mt-7 flex flex-wrap items-center justify-center gap-2 text-sm text-black/55">
+                      <span>Remember your password?</span>
+                      <button
+                        type="button"
+                        onClick={() => switchMode("login")}
+                        className="font-semibold text-black underline underline-offset-4 transition-colors hover:text-black/50"
+                      >
+                        Log in
+                      </button>
+                    </div>
+                  </>
                 )}
               </div>
             ) : (
@@ -446,168 +507,139 @@ function AuthPage() {
           >
             <div className="auth-form-shell">
               <div className="text-center">
-                <h1 className="auth-title mx-auto">
-                  {signupComplete ? "Account created" : "Create your account"}
-                </h1>
+                <h1 className="auth-title mx-auto">Create your account</h1>
                 <p className="auth-copy mx-auto text-center">
-                  {signupComplete
-                    ? "Your listening journal is ready"
-                    : "Sign up to save your profile and manage your account"}
+                  Sign up to save your profile and manage your account
                 </p>
               </div>
 
-              {signupComplete ? (
-                <div className="mt-10 text-center">
-                  <CheckCircle2
-                    aria-hidden="true"
-                    className="mx-auto h-12 w-12 text-emerald-500"
-                    strokeWidth={1.7}
-                  />
-                  <p className="mx-auto mt-5 max-w-sm text-sm leading-6 text-black/55">
-                    Your account has been created successfully. Continue to
-                    open your personal listening journal.
+              {apiError && (
+                <div
+                  role="alert"
+                  className="mt-7 border-l-2 border-red-600 bg-red-50 px-4 py-3"
+                >
+                  <p className="text-sm font-semibold text-red-700">
+                    {apiError}
                   </p>
-                  {apiError && (
-                    <div
-                      role="alert"
-                      className="mt-6 border-l-2 border-red-600 bg-red-50 px-4 py-3 text-left"
-                    >
-                      <p className="text-sm font-semibold text-red-700">
-                        {apiError}
-                      </p>
-                    </div>
-                  )}
-                  <button
-                    type="button"
-                    onClick={handleContinueAfterSignup}
-                    disabled={state.loading}
-                    className="mt-7 inline-flex h-12 w-full items-center justify-center gap-2 rounded-[4px] bg-black px-7 text-sm font-semibold text-white transition-colors hover:bg-[#46413e] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {state.loading && (
-                      <Loader2
-                        aria-hidden="true"
-                        className="animate-spin"
-                        size={17}
-                      />
-                    )}
-                    Continue
-                  </button>
+                  <p className="mt-1 text-xs text-red-600">
+                    Please check your details and try again.
+                  </p>
                 </div>
-              ) : (
-                <>
-                  {apiError && (
-                    <div
-                      role="alert"
-                      className="mt-7 border-l-2 border-red-600 bg-red-50 px-4 py-3"
-                    >
-                      <p className="text-sm font-semibold text-red-700">
-                        {apiError}
-                      </p>
-                      <p className="mt-1 text-xs text-red-600">
-                        Please check your details and try again.
-                      </p>
-                    </div>
-                  )}
-
-                  <form
-                    className="mt-8 grid gap-x-5 gap-y-5 sm:grid-cols-2"
-                    onSubmit={handleRegister}
-                  >
-                    <Field
-                      id="register-name"
-                      type="text"
-                      autoComplete="name"
-                      label="Name"
-                      placeholder="Your name"
-                      icon={User}
-                      value={form.name}
-                      error={errors.name}
-                      disabled={state.loading}
-                      onChange={(event) =>
-                        handleChange("name", event.target.value)
-                      }
-                    />
-                    <Field
-                      id="register-username"
-                      type="text"
-                      autoComplete="username"
-                      label="Username"
-                      placeholder="your_username"
-                      icon={AtSign}
-                      value={form.username}
-                      error={errors.username}
-                      disabled={state.loading}
-                      onChange={(event) =>
-                        handleChange("username", event.target.value)
-                      }
-                    />
-                    <div className="sm:col-span-2">
-                      <Field
-                        id="register-email"
-                        type="email"
-                        autoComplete="email"
-                        label="Email"
-                        placeholder="you@example.com"
-                        icon={Mail}
-                        value={form.email}
-                        error={errors.email}
-                        disabled={state.loading}
-                        onChange={(event) =>
-                          handleChange("email", event.target.value)
-                        }
-                      />
-                    </div>
-                    <div className="sm:col-span-2">
-                      <Field
-                        id="register-password"
-                        type="password"
-                        autoComplete="new-password"
-                        label="Password"
-                        placeholder="At least 8 characters, including ."
-                        icon={LockKeyhole}
-                        value={form.password}
-                        error={errors.password}
-                        disabled={state.loading}
-                        onChange={(event) =>
-                          handleChange("password", event.target.value)
-                        }
-                      />
-                    </div>
-                    <div className="sm:col-span-2">
-                      <Field
-                        id="register-confirm-password"
-                        type="password"
-                        autoComplete="new-password"
-                        label="Confirm password"
-                        placeholder="Repeat password"
-                        icon={LockKeyhole}
-                        value={form.confirmPassword}
-                        error={errors.confirmPassword}
-                        disabled={state.loading}
-                        onChange={(event) =>
-                          handleChange("confirmPassword", event.target.value)
-                        }
-                      />
-                    </div>
-                    <div className="mt-2 sm:col-span-2">
-                      <SubmitButton loading={state.loading}>Sign up</SubmitButton>
-                    </div>
-                  </form>
-
-                  <GoogleAuthButton />
-
-                  <div className="mt-7 flex flex-wrap items-center justify-center gap-2 text-sm text-black/55">
-                    <span>Already have an account?</span>
-                    <button
-                      type="button"
-                      onClick={() => switchMode("login")}
-                      className="font-semibold text-black underline underline-offset-4 transition-colors hover:text-black/50"
-                    >
-                      Log in
-                    </button>
-                  </div>
-                </>
               )}
+
+              <form
+                className="mt-8 grid gap-x-5 gap-y-5 sm:grid-cols-2"
+                onSubmit={handleRegister}
+              >
+                <Field
+                  id="register-first-name"
+                  type="text"
+                  autoComplete="given-name"
+                  label="First name"
+                  placeholder="Your first name"
+                  icon={User}
+                  value={form.firstName}
+                  error={errors.firstName}
+                  disabled={state.loading}
+                  onChange={(event) =>
+                    handleChange("firstName", event.target.value)
+                  }
+                />
+                <Field
+                  id="register-last-name"
+                  type="text"
+                  autoComplete="family-name"
+                  label="Last name (optional)"
+                  placeholder="Your last name"
+                  icon={User}
+                  value={form.lastName}
+                  error={errors.lastName}
+                  disabled={state.loading}
+                  onChange={(event) =>
+                    handleChange("lastName", event.target.value)
+                  }
+                />
+                <div className="sm:col-span-2">
+                  <Field
+                    id="register-username"
+                    type="text"
+                    autoComplete="username"
+                    label="Username"
+                    placeholder="your_username"
+                    icon={AtSign}
+                    value={form.username}
+                    error={errors.username}
+                    disabled={state.loading}
+                    onChange={(event) =>
+                      handleChange("username", event.target.value)
+                    }
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <Field
+                    id="register-email"
+                    type="email"
+                    autoComplete="email"
+                    label="Email"
+                    placeholder="you@example.com"
+                    icon={Mail}
+                    value={form.email}
+                    error={errors.email}
+                    disabled={state.loading}
+                    onChange={(event) =>
+                      handleChange("email", event.target.value)
+                    }
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <Field
+                    id="register-password"
+                    type="password"
+                    autoComplete="new-password"
+                    label="Password"
+                    placeholder="At least 8 characters, including ."
+                    icon={LockKeyhole}
+                    value={form.password}
+                    error={errors.password}
+                    disabled={state.loading}
+                    onChange={(event) =>
+                      handleChange("password", event.target.value)
+                    }
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <Field
+                    id="register-confirm-password"
+                    type="password"
+                    autoComplete="new-password"
+                    label="Confirm password"
+                    placeholder="Repeat password"
+                    icon={LockKeyhole}
+                    value={form.confirmPassword}
+                    error={errors.confirmPassword}
+                    disabled={state.loading}
+                    onChange={(event) =>
+                      handleChange("confirmPassword", event.target.value)
+                    }
+                  />
+                </div>
+                <div className="mt-2 sm:col-span-2">
+                  <SubmitButton loading={state.loading}>Sign up</SubmitButton>
+                </div>
+              </form>
+
+              <GoogleAuthButton />
+
+              <div className="mt-7 flex flex-wrap items-center justify-center gap-2 text-sm text-black/55">
+                <span>Already have an account?</span>
+                <button
+                  type="button"
+                  onClick={() => switchMode("login")}
+                  className="font-semibold text-black underline underline-offset-4 transition-colors hover:text-black/50"
+                >
+                  Log in
+                </button>
+              </div>
             </div>
           </div>
 

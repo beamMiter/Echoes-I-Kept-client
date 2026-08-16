@@ -36,23 +36,20 @@ function persistSession({ accessToken, refreshToken, user }) {
   cacheUser(user)
 }
 
-export async function signup({ name, username, email, password }, { persist = true } = {}) {
+// Signup no longer returns a session — the server requires the account's
+// email to be verified (via a 6-digit code) before any login is allowed, so
+// there's nothing to persist here anymore.
+export async function signup({ firstName, lastName, username, email, password }) {
   try {
-    const { firstName, lastName } = splitName(name)
     const { data } = await apiClient.post('/api/auth/signup', {
       firstName,
-      lastName,
+      lastName: lastName?.trim() || null,
       username,
       email,
       password,
     })
 
-    const user = toDisplayUser(data.data)
-    if (persist) {
-      persistSession({ accessToken: data.accessToken, refreshToken: data.refreshToken, user })
-    }
-
-    return { user }
+    return { user: toDisplayUser(data.data) }
   } catch (error) {
     throw normalizeApiError(error)
   }
@@ -70,7 +67,69 @@ export async function login({ email, password, role }) {
   }
 }
 
-export async function updateProfile({ name, username, email, profilePic }) {
+// The server treats this as first-login, returning-user, or account-linking
+// purely based on what's already in its database — the client just forwards
+// the credential Google issued and persists whatever session comes back,
+// identical in shape to login()'s response.
+export async function loginWithGoogle(credential) {
+  try {
+    const { data } = await apiClient.post('/api/auth/google', { credential })
+    const user = toDisplayUser(data.data)
+    persistSession({ accessToken: data.accessToken, refreshToken: data.refreshToken, user })
+
+    return { user }
+  } catch (error) {
+    throw normalizeApiError(error)
+  }
+}
+
+export async function verifyEmail({ email, code }) {
+  try {
+    const { data } = await apiClient.post('/api/auth/verify-email', { email, code })
+    const user = toDisplayUser(data.data)
+    persistSession({ accessToken: data.accessToken, refreshToken: data.refreshToken, user })
+
+    return { user }
+  } catch (error) {
+    throw normalizeApiError(error)
+  }
+}
+
+export async function resendVerificationCode({ email }) {
+  try {
+    await apiClient.post('/api/auth/resend-verification-code', { email })
+  } catch (error) {
+    throw normalizeApiError(error)
+  }
+}
+
+// Always "succeeds" from the caller's perspective — the server never
+// reveals whether the email belongs to a real account, so there's nothing
+// for this to branch on beyond a hard network/server failure.
+export async function forgotPassword({ email }) {
+  try {
+    await apiClient.post('/api/auth/forgot-password', { email })
+  } catch (error) {
+    throw normalizeApiError(error)
+  }
+}
+
+export async function resetPasswordWithToken({ token, newPassword }) {
+  try {
+    const { data } = await apiClient.post('/api/auth/reset-password', {
+      token,
+      newPassword,
+    })
+    const user = toDisplayUser(data.data)
+    persistSession({ accessToken: data.accessToken, refreshToken: data.refreshToken, user })
+
+    return { user }
+  } catch (error) {
+    throw normalizeApiError(error)
+  }
+}
+
+export async function updateProfile({ name, username, email, profilePic, bio }) {
   try {
     const { firstName, lastName } = splitName(name)
     const { data } = await apiClient.put('/api/auth/me', {
@@ -79,6 +138,7 @@ export async function updateProfile({ name, username, email, profilePic }) {
       username,
       email,
       profilePic: profilePic || null,
+      bio,
     })
 
     const user = toDisplayUser(data.data)

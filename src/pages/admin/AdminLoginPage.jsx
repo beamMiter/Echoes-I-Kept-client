@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { Loader2, X } from 'lucide-react'
 import { useAuth } from '../../context/useAuth'
+import { buttonClassName } from '../../utils/buttonStyles'
 
 function AdminLoginPage() {
   const navigate = useNavigate()
@@ -110,7 +111,7 @@ function AdminLoginPage() {
             <button
               type="submit"
               disabled={state.loading}
-              className="inline-flex h-10 min-w-[96px] items-center justify-center gap-2 rounded-full bg-foreground px-6 text-xs font-medium text-white hover:bg-muted-foreground disabled:opacity-60"
+              className={buttonClassName('primary', 'min-w-[96px]')}
             >
               {state.loading && <Loader2 className="h-4 w-4 animate-spin" />}
               Log in
