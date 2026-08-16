@@ -1,3 +1,5 @@
+import { defaultAvatarUrl } from "../utils/defaultAvatar";
+
 function AuthorSidebar({ name, profilePic, bio }) {
   // A default parameter only fires on `undefined`, and these columns are
   // nullable — a null author_bio would reach `bio.length` below and blank the
@@ -11,7 +13,7 @@ function AuthorSidebar({ name, profilePic, bio }) {
       <div className="flex items-center mb-4">
         <div className="w-16 h-16 rounded-full overflow-hidden mr-4 shrink-0">
           <img
-            src={profilePic || "/avatars/anime.jpg"}
+            src={profilePic || defaultAvatarUrl(authorName)}
             alt={authorName}
             draggable={false}
             className="object-cover w-16 h-16"
